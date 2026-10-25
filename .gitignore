@@ -83,3 +83,5 @@ jadx-out/
 protos/
 captures.json
 logs.txt
+
+/tmp/
