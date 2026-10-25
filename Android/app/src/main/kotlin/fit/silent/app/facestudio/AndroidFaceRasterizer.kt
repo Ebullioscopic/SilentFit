@@ -69,7 +69,8 @@ class AndroidFaceRasterizer(private val context: Context) : FaceRasterizer {
 
     override fun hand(spec: FaceSpec, element: FaceElement): Raster {
         val bmp = createBitmap(spec.width, spec.height)
-        drawHand(Canvas(bmp), element, 0f)
+        // The watch rotates hand images starting from 3 o'clock (record angle 900 = 90°).
+        drawHand(Canvas(bmp), element, 90f)
         return bmp.toRaster()
     }
 
@@ -109,7 +110,7 @@ class AndroidFaceRasterizer(private val context: Context) : FaceRasterizer {
             val right = if (e.w > 0) e.x + e.w else e.x + strip.width * (e.binding?.maxDigits ?: 1)
             var x = when {
                 e.align == "right" -> right - total
-                e.align == "center" && e.w > 0 && e.binding?.digitIds != null -> e.x + (e.w - total) / 2
+                e.align == "center" -> (e.x + right) / 2 - total / 2
                 else -> e.x
             }
             for (index in indices) {

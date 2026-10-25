@@ -34,7 +34,7 @@ enum class Binding(
 ) {
     HOUR_HAND("hand.hour", "Hour hand", BindingKind.HAND, FaceRecord.TYPE_HAND, 0x05),
     MINUTE_HAND("hand.minute", "Minute hand", BindingKind.HAND, FaceRecord.TYPE_HAND, 0x06),
-    SECOND_HAND("hand.second", "Second hand", BindingKind.HAND, FaceRecord.TYPE_HAND, 0x07, verified = false),
+    SECOND_HAND("hand.second", "Second hand", BindingKind.HAND, FaceRecord.TYPE_HAND, 0x07),
     MONTH("date.month", "Month", BindingKind.NUMBER, FaceRecord.TYPE_NUMBER, 0x02, sample = "10"),
     DAY("date.day", "Day", BindingKind.NUMBER, FaceRecord.TYPE_NUMBER, 0x03, sample = "25"),
     WEEKDAY("date.weekday", "Weekday", BindingKind.SPRITE, FaceRecord.TYPE_NUMBER, 0xFF, "PICBOX1", GlyphSet.WEEKDAYS, "SAT"),

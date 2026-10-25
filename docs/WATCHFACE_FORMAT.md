@@ -60,7 +60,7 @@ bytes:
 
 | Type | Meaning | Extra 8 bytes |
 |-----:|---------|---------------|
-| 1 | rotating hand | `u16 pivotX, u16 pivotY, u32 angle×10` (900 = image drawn pointing at 3 o'clock) |
+| 1 | rotating hand | `u16 pivotX, u16 pivotY, u32 angle×10` (900: the image is drawn pointing at **3 o'clock**; the watch rotates it from 90°) |
 | 2 | image / image sprite | zeros |
 | 4 | number / indexed sprite | `u8 1`, then a 7-byte ASCII name (zero padded) when `dataId = 0xFF` |
 
@@ -69,20 +69,22 @@ others are **long** records (39 bytes) with 23 more bytes. A parser tells them a
 by the `extern` tag (the header words at 0x08/0x0A are not reliable):
 
 ```
-"extern!I" (left-aligned) | "externci" (right-aligned)
+"extern!I" (left-aligned) | "externBy" (centred) | "externci" (right-aligned)
 00 00 09 00 00 00 01 00 00 00 01 00 00 00      fixed
-u8 anchor                                       1 left, 3 right
+u8 anchor                                       1 left, 2 centre, 3 right
 ```
 
 For right-aligned values `x` is negative and measured from the right edge
-(`x = -(240 - rightEdge)`), so numbers grow leftwards.
+(`x = -(240 - rightEdge)`), so numbers grow leftwards. Centred values give the centre;
+on the right half of the screen it is negative, measured from the right edge (the
+official sport face uses `62` and `-62` for two symmetric subdials).
 
 ### Record order
 
 1. background — type 2, id `0x10`, 1 frame, at (120, 140) = screen centre
 2. preview — type 2, id `0x11`, 1 frame, 164 × 191, at (0, 0) or (120, 140)
 3. long records (live values, optional static images)
-4. hands, hour (`0x05`) before minute (`0x06`), always last
+4. hands, hour (`0x05`), minute (`0x06`) and seconds (`0x07`), always last
 
 ## 3. PAR image codec
 
@@ -134,6 +136,11 @@ store faces), and they are the **only** ids SilentFit will send.
 | Battery | 4 | `0xFF` | `NUMBER2` | 10 | |
 | Hour hand | 1 | `0x05` | | 1 | |
 | Minute hand | 1 | `0x06` | | 1 | |
+| Seconds hand | 1 | `0x07` | | 1 | official sport face |
+
+> **Steps vs calories:** the first analogue face labels `0x41` "Steps" and `0x40`
+> "Kcal"; the sport face puts a footprints icon next to `0x40`. SilentFit follows the
+> first (explicitly labelled) face; if the watch shows them swapped, the ids are swapped.
 
 Digital time is drawn digit by digit: the studio's *Hour* and *Minute* elements compile
 to two records each (`0x08`+`0x09`, `0x0A`+`0x0B`), exactly like the first store face;
@@ -146,7 +153,7 @@ never the record structure. SilentFit gives every single-glyph record (weekday, 
 time digits) the exact piece of background behind it, so glyphs sit seamlessly on
 patterns and photos.
 
-**Not supported:** seconds, second hand, year, distance, SpO₂, off-centre hands and
+**Not supported:** year, distance, SpO₂, off-centre hands and
 any other id. A probe face using ids `0x00–0x0E` boot-looped the watch; `0x08–0x0B`
 are now proven by an official face, so the culprit is among the others. `Binding.verified
 = false` marks these; the compiler refuses them and the studio hides them.
@@ -176,8 +183,9 @@ and raw files are checked again at import. A file passes only if:
   and anchor agree
 * live images are opaque, untiled, split evenly into their frames, at most 120 px wide
   and 870 px tall per strip (the largest official strip), and lie on screen
-* hands are ids `0x05`/`0x06` in order, last, full-screen transparent images tiled at
-  30, centred, pivot exactly (120, 140), angle 900
+* hands are ids `0x05`/`0x06`/`0x07` in order, last, full-screen transparent images tiled at
+  30, centred, pivot exactly (120, 140), angle 900, and drawn pointing at 3 o'clock (most
+  visible pixels right of the pivot) — a hand drawn at 12 o'clock shows the wrong time
 * every image offset and every row/tile offset stays inside the file
 
 The rules are tested against both official faces (pass, and re-encode byte for byte)

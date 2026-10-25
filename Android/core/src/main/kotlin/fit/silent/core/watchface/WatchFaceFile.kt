@@ -3,7 +3,7 @@ package fit.silent.core.watchface
 import fit.silent.core.protocol.ByteSink
 import fit.silent.core.protocol.Bytes
 
-/** Horizontal anchor of a long record; negative x values measure from the right edge. */
+/** Horizontal anchor of a long record; negative x values measure from the right edge (centre: right half). */
 enum class Anchor(val wire: Int) { LEFT(1), CENTER(2), RIGHT(3);
     companion object { fun of(v: Int) = entries.firstOrNull { it.wire == v } ?: LEFT }
 }
@@ -39,6 +39,7 @@ data class FaceRecord(
         private val LONG_TAIL = Bytes.of(0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00)
         private val NAME_LEFT = "extern!I".toByteArray()
         private val NAME_RIGHT = "externci".toByteArray()
+        private val NAME_CENTER = "externBy".toByteArray()
 
         internal fun write(out: ByteSink, r: FaceRecord) {
             out.u8(r.type).u8(r.dataId).u16(r.frames).u16(r.x).u16(r.y)
@@ -52,7 +53,7 @@ data class FaceRecord(
                 else -> out.zeros(8)
             }
             if (!r.compact) {
-                out.bytes(if (r.anchor == Anchor.RIGHT) NAME_RIGHT else NAME_LEFT).bytes(LONG_TAIL).u8(r.anchor.wire)
+                out.bytes(when (r.anchor) { Anchor.RIGHT -> NAME_RIGHT; Anchor.CENTER -> NAME_CENTER; else -> NAME_LEFT }).bytes(LONG_TAIL).u8(r.anchor.wire)
             }
         }
 

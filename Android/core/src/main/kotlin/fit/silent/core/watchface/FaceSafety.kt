@@ -1,6 +1,7 @@
 package fit.silent.core.watchface
 
 import fit.silent.core.protocol.Bytes
+import kotlin.math.abs
 
 /**
  * Structural gate run on every "WF" file before it may be sent to the watch, whatever its source
@@ -42,7 +43,7 @@ object FaceSafety {
         Pattern(FaceRecord.TYPE_NUMBER, 0xFF, 1, "N_DATA4"),
         Pattern(FaceRecord.TYPE_NUMBER, 0xFF, 10, "NUMBER2"),
     )
-    private val HAND_IDS = listOf(0x05, 0x06)
+    private val HAND_IDS = listOf(0x05, 0x06, 0x07)
     private val LONG_TAIL = Bytes.of(0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00)
 
     /** Returns the problems found; an empty list means the file only uses proven structures. */
@@ -119,6 +120,7 @@ object FaceSafety {
                     val px = Bytes.u16le(d, b + 8); val py = Bytes.u16le(d, b + 10)
                     if (px != WIDTH / 2 || py != HEIGHT / 2) problems += "$label: hands must turn around the screen centre"
                     if (Bytes.u32le(d, b + 12) != 900L) problems += "$label: unexpected hand angle"
+                    if (!pointsAtThree(d, offset, px, py)) problems += "$label: hand image must point at 3 o'clock"
                 }
                 else -> {
                     if (hands.isNotEmpty()) problems += "$label: hands must be the last elements"
@@ -137,7 +139,7 @@ object FaceSafety {
                     val anchor = Bytes.u8(d, b + FaceRecord.LONG_BODY - 1)
                     val tag = String(d, b + 16, 8, Charsets.US_ASCII)
                     val tailOk = (0 until LONG_TAIL.size).all { d[b + 24 + it] == LONG_TAIL[it] }
-                    if (!tailOk || !((tag == "extern!I" && anchor == 1) || (tag == "externci" && anchor == 3))) problems += "$label: unexpected layout data"
+                    if (!((tag == "extern!I" && anchor == 1) || (tag == "externBy" && anchor == 2) || (tag == "externci" && anchor == 3)) || !tailOk) problems += "$label: unexpected layout data"
                     if (alpha != 0 || tile != 0) problems += "$label: image must be opaque"
                     if (frames == 0 || ih % frames != 0) problems += "$label: image does not split into $frames frames"
                     val frameHeight = if (frames == 0) ih else ih / frames
@@ -156,6 +158,28 @@ object FaceSafety {
     }
 
     private fun zeros(d: ByteArray, from: Int, n: Int) = (from until from + n).all { d[it].toInt() == 0 }
+
+    /**
+     * The watch rotates hand images from 90° (angle field 900), so official hands are drawn pointing right of the
+     * pivot. A hand drawn any other way shows the wrong time; require most visible pixels to lie to the right.
+     */
+    private fun pointsAtThree(d: ByteArray, offset: Int, px: Int, py: Int): Boolean {
+        val (image, _) = Par.decode(d, offset)
+        val mass = LongArray(4) // right, left, up, down
+        for (y in 0 until image.height) for (x in 0 until image.width) {
+            val a = image.pixels[y * image.width + x] ushr 24
+            val dx = x - px; val dy = y - py
+            if (a == 0 || dx * dx + dy * dy < 64) continue
+            val dir = when {
+                dx > abs(dy) -> 0
+                -dx > abs(dy) -> 1
+                dy < 0 -> 2
+                else -> 3
+            }
+            mass[dir] += a.toLong()
+        }
+        return mass[0] > 0 && mass[0] >= 2 * maxOf(mass[1], mass[2], mass[3])
+    }
 
     /** End of the PAR image at [offset]; also verifies every row/tile offset stays inside the image data. */
     private fun imageEnd(d: ByteArray, offset: Int): Int {

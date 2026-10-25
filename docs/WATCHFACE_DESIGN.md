@@ -35,17 +35,23 @@ old one; built-in faces are never touched.
 
 ### Presets
 
+The NF 2 is a low-resolution LCD, so every preset follows the same rules: strokes ≥ 3 px,
+hands 7–12 px wide, labels ≥ 13 px bold, values ≥ 20 px, LED dots ≥ 3 px apart. Use the
+same rules for your own designs.
+
 | Preset | Look |
 |--------|------|
-| **Dot Matrix** | Nothing's dotted dial: Doto numerals, dot hands, red accent, weekday + day |
-| **Dot Matrix Digital** | Large Doto hours over minutes on a dotted field, weekday, day and heart rate |
-| **LED Matrix** | 5×7 LED digits with unlit dots showing, red colon, BPM and battery |
+| **Dot Matrix** | Nothing's dotted dial: Doto 12, bold dot hands, red seconds, weekday + day |
+| **Instrument** | Bold batons, big 12-3-6-9, BPM and steps readouts |
+| **Paper** | Light dial, black batons and hands, red seconds, boxed date |
+| **Subdials** | Two black subdials with centred steps and calories, after the official sport face |
+| **Glyph Rings** | Thick segmented arcs around bold line hands, step count |
+| **Minimal** | Thick hands, red seconds and four markers only |
+| **Dot Matrix Digital** | Large Doto hours over minutes on a dotted field, date and heart rate |
+| **LED Matrix** | 5×7 LED digits with unlit dots showing, BPM and battery |
 | **Segment** | Red seven-segment time over ghost segments, steps, date and battery |
-| **Stack** | Light Grotesk hours over red minutes, vertical weekday on the edge |
-| **Glyph Data** | Compact Doto time above steps, kcal, BPM and battery rows, like Nothing widgets |
-| **Instrument** | 60-tick ring, needle minute hand, BPM and steps readouts |
-| **Paper** | Light, printed-manual face with black hands and the date |
-| **Glyph Rings** | Segmented arcs around line hands, step count |
+| **Stack** | Bold Grotesk hours over red minutes, vertical weekday |
+| **Glyph Data** | Compact Doto time above steps, kcal, BPM and battery rows |
 
 ## 2. Code files
 
@@ -124,7 +130,7 @@ so you can use as many as you like without cost on the watch.
 
 | Key | Element | Shows |
 |-----|---------|-------|
-| `hand.hour`, `hand.minute` | hand | analogue time |
+| `hand.hour`, `hand.minute`, `hand.second` | hand | analogue time |
 | `time.hour`, `time.minute` | number | digital time, two digits; `align: "center"` with `w` centres them |
 | `time.hour.tens`, `time.hour.units`, `time.minute.tens`, `time.minute.units` | number | one digit each, for free layouts (e.g. a 2 × 2 grid); don't combine with the two-digit version of the same value |
 | `time.ampm` | sprite | AM / PM |
@@ -135,7 +141,7 @@ so you can use as many as you like without cost on the watch.
 | `health.heartRate` | number | BPM; shows `--` until there is a reading |
 | `device.battery` | number | battery % |
 
-Seconds, year, distance and SpO₂ are **not available**: no official face for this watch
+Year, distance and SpO₂ are **not available**: no official face for this watch
 uses them yet, so their data ids are unproven.
 
 ### Shapes

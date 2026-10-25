@@ -452,10 +452,10 @@ private fun StylePanel(e: FaceElement, edit: ((FaceElement) -> FaceElement) -> U
                 GlyphStyle(e, edit)
                 if (e.glyph == "font") FontPicker(e, edit)
                 Stepper("Size", e.size.roundToInt(), { v -> edit { it.copy(size = v.toFloat()) } }, 8..140)
-                Label(if (e.isFixedGlyph) "Align in box" else "Grow from", Modifier.padding(top = Space.md))
+                Label(if (e.isFixedGlyph) "Align in box" else "Anchor", Modifier.padding(top = Space.md))
                 Spacer(Modifier.height(Space.sm))
-                SegmentedControl(if (e.isFixedGlyph) listOf("left", "center", "right") else listOf("left", "right"), e.align, { v -> edit { it.copy(align = v) } }, label = { it })
-                if (e.isFixedGlyph) Stepper("Box width", e.w, { v -> edit { it.copy(w = v) } }, 0..240, step = 4, format = { if (it == 0) "Auto" else "$it px" })
+                SegmentedControl(listOf("left", "center", "right"), e.align, { v -> edit { it.copy(align = v) } }, label = { it })
+                Stepper("Box width", e.w, { v -> edit { it.copy(w = v) } }, 0..240, step = 4, format = { if (it == 0) "Auto" else "$it px" })
                 if (e.type == "sprite") Rotation(e, edit)
             }
             "text" -> {

@@ -105,9 +105,14 @@ class FaceCompiler(private val rasterizer: FaceRasterizer) {
             }
             val strip = rasterizer.glyphs(spec, e, frames)
             val image = addImage(Par.encode(strip.pixels, strip.width, strip.height))
-            val anchor = if (e.align == "right") Anchor.RIGHT else Anchor.LEFT
+            val anchor = when (e.align) { "right" -> Anchor.RIGHT; "center" -> Anchor.CENTER; else -> Anchor.LEFT }
             val boxWidth = if (e.w > 0) e.w else strip.width * binding.maxDigits
-            val wireX = if (anchor == Anchor.RIGHT) -(spec.width - (e.x + boxWidth)) else e.x
+            val wireX = when (anchor) {
+                Anchor.RIGHT -> -(spec.width - (e.x + boxWidth))
+                // Official centred numbers give the centre x; on the right half it is measured from the right edge.
+                Anchor.CENTER -> (e.x + boxWidth / 2).let { c -> if (c > spec.width / 2) -(spec.width - c) else c }
+                Anchor.LEFT -> e.x
+            }
             val type = binding.recordType
             val name = binding.recordName
             val id = binding.dataId

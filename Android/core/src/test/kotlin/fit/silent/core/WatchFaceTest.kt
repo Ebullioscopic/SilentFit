@@ -111,7 +111,7 @@ class WatchFaceTest {
             override fun background(spec: FaceSpec) = Raster(spec.width, spec.height, IntArray(spec.width * spec.height) { 0xFF000000.toInt() })
             override fun glyphs(spec: FaceSpec, element: FaceElement, frames: List<String>, at: Pair<Int, Int>?) =
                 GlyphStrip(8, 12, frames.size, IntArray(8 * 12 * frames.size) { 0xFFFFFFFF.toInt() })
-            override fun hand(spec: FaceSpec, element: FaceElement) = Raster(spec.width, spec.height, IntArray(spec.width * spec.height))
+            override fun hand(spec: FaceSpec, element: FaceElement) = handAt(spec, pointingRight = true)
             override fun preview(spec: FaceSpec, width: Int, height: Int) = Raster(width, height, IntArray(width * height) { 0xFF000000.toInt() })
         }
         val spec = FaceSpec(

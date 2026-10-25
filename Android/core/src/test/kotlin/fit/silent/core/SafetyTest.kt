@@ -81,7 +81,7 @@ class SafetyTest {
         override fun background(spec: FaceSpec) = Raster(spec.width, spec.height, IntArray(spec.width * spec.height) { 0xFF000000.toInt() })
         override fun glyphs(spec: FaceSpec, element: FaceElement, frames: List<String>, at: Pair<Int, Int>?) =
             GlyphStrip(8, 12, frames.size, IntArray(8 * 12 * frames.size) { 0xFFFFFFFF.toInt() })
-        override fun hand(spec: FaceSpec, element: FaceElement) = Raster(spec.width, spec.height, IntArray(spec.width * spec.height))
+        override fun hand(spec: FaceSpec, element: FaceElement) = handAt(spec, pointingRight = true)
         override fun preview(spec: FaceSpec, width: Int, height: Int) = Raster(width, height, IntArray(width * height) { 0xFF000000.toInt() })
     }
 
@@ -120,6 +120,16 @@ class SafetyTest {
             FaceRecord(2, 0x11, 1, 0, 0, 1, compact = true, anchor = Anchor.CENTER),
         ) + extra
         return WatchFaceFile(width, height, records, listOf(bg, preview, digits)).encode()
+    }
+
+    @Test fun rejectsHandsNotDrawnAtThreeOClock() {
+        // A hand drawn pointing at 12 made the watch show the wrong time (hands looked stuck).
+        val twelve = object : FaceRasterizer by raster {
+            override fun hand(spec: FaceSpec, element: FaceElement) = handAt(spec, pointingRight = false)
+        }
+        val spec = FaceSpec(elements = listOf(FaceElement("m", "hand", bind = Binding.MINUTE_HAND.key)))
+        assertFalse(FaceSafety.isSafe(FaceCompiler(twelve).compile(spec).bytes))
+        assertEquals(emptyList(), FaceSafety.check(FaceCompiler(raster).compile(spec).bytes))
     }
 
     @Test fun minimalFacePasses() {
