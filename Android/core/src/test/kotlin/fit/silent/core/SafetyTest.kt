@@ -85,18 +85,30 @@ class SafetyTest {
         override fun preview(spec: FaceSpec, width: Int, height: Int) = Raster(width, height, IntArray(width * height) { 0xFF000000.toInt() })
     }
 
-    @Test fun vendorFacePassesSafetyCheck() {
-        val path = System.getenv("SILENTFIT_FACE_SAMPLE") ?: return
-        assertEquals(emptyList(), FaceSafety.check(File(path).readBytes()))
+    @Test fun vendorFacesPassSafetyCheck() {
+        officialSamples().forEach { assertEquals(emptyList(), FaceSafety.check(it.readBytes()), it.name) }
     }
 
-    @Test fun compiledFaceWithEveryVerifiedBindingPasses() {
-        val elements = Binding.entries.filter { it.verified }.mapIndexed { i, b ->
+    private fun compileAll(bindings: List<Binding>): ByteArray {
+        val elements = bindings.mapIndexed { i, b ->
             val type = when (b.kind.name) { "HAND" -> "hand"; "SPRITE" -> "sprite"; else -> "number" }
             FaceElement("e$i", type, 10 + (i % 4) * 50, 20 + (i / 4) * 40, bind = b.key)
         }
-        val compiled = FaceCompiler(raster).compile(FaceSpec(elements = elements))
-        assertEquals(emptyList(), FaceSafety.check(compiled.bytes))
+        return FaceCompiler(raster).compile(FaceSpec(elements = elements)).bytes
+    }
+
+    private val splitDigits = setOf(Binding.HOUR_TENS, Binding.HOUR_UNITS, Binding.MINUTE_TENS, Binding.MINUTE_UNITS)
+
+    @Test fun compiledFaceWithEveryVerifiedBindingPasses() {
+        assertEquals(emptyList(), FaceSafety.check(compileAll(Binding.entries.filter { it.verified && it !in splitDigits })))
+        assertEquals(emptyList(), FaceSafety.check(compileAll(Binding.entries.filter { it.verified && it != Binding.HOUR && it != Binding.MINUTE })))
+    }
+
+    @Test fun digitalTimeCompilesToOneRecordPerDigit() {
+        val bytes = compileAll(listOf(Binding.HOUR, Binding.MINUTE))
+        val ids = WatchFaceFile.decode(bytes).records.drop(2).map { it.dataId }
+        assertEquals(listOf(0x08, 0x09, 0x0A, 0x0B), ids)
+        assertFalse(FaceSafety.isSafe(compileAll(listOf(Binding.HOUR, Binding.HOUR_TENS))), "hour digit placed twice")
     }
 
     private fun face(vararg extra: FaceRecord, width: Int = 240, height: Int = 280): ByteArray {
@@ -120,6 +132,7 @@ class SafetyTest {
         assertFalse(FaceSafety.isSafe(face(FaceRecord(4, 0x07, 10, 38, 8, 2))))
         assertFalse(FaceSafety.isSafe(face(FaceRecord(4, 0xFF, 10, 38, 8, 2, name = "NUMBER5"))))
         assertFalse(FaceSafety.isSafe(face(FaceRecord(4, 0x41, 7, 38, 8, 2))))
+        assertFalse(FaceSafety.isSafe(face(FaceRecord(4, 0x0C, 10, 38, 8, 2))))
     }
 
     @Test fun rejectsStructuralProblems() {

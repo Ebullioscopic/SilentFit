@@ -40,8 +40,8 @@ All integers are little-endian.
 | 0x00 | 2 | `'W' 'F'` |
 | 0x02 | 2 | version `0x0414` |
 | 0x04 | 4 | 0 |
-| 0x08 | 2 | number of leading background records (1) |
-| 0x0A | 2 | number of leading preview records (1) |
+| 0x08 | 2 | 1 or 0 (official faces use both 1/1 and 0/0) |
+| 0x0A | 2 | 1 or 0 |
 | 0x0C | 30 | zeros |
 | 0x2A | 2 | screen width (240) |
 | 0x2C | 2 | screen height (280) |
@@ -65,7 +65,8 @@ bytes:
 | 4 | number / indexed sprite | `u8 1`, then a 7-byte ASCII name (zero padded) when `dataId = 0xFF` |
 
 **Compact** records (16-byte body) are the background, the preview and hands. All
-others are **long** records (39 bytes) with 23 more bytes:
+others are **long** records (39 bytes) with 23 more bytes. A parser tells them apart
+by the `extern` tag (the header words at 0x08/0x0A are not reliable):
 
 ```
 "extern!I" (left-aligned) | "externci" (right-aligned)
@@ -79,7 +80,7 @@ For right-aligned values `x` is negative and measured from the right edge
 ### Record order
 
 1. background — type 2, id `0x10`, 1 frame, at (120, 140) = screen centre
-2. preview — type 2, id `0x11`, 1 frame, 164 × 191, at (0, 0)
+2. preview — type 2, id `0x11`, 1 frame, 164 × 191, at (0, 0) or (120, 140)
 3. long records (live values, optional static images)
 4. hands, hour (`0x05`) before minute (`0x06`), always last
 
@@ -109,8 +110,8 @@ For right-aligned values `x` is negative and measured from the right edge
 
 ## 4. Data ids
 
-Only these ids appear in the official face for this watch, and they are the **only**
-ids SilentFit will send.
+Only these ids appear in official faces for this watch (an analogue face and a digital
+store face), and they are the **only** ids SilentFit will send.
 
 | Binding | Type | Id | Name | Frames | Notes |
 |---------|-----:|---:|------|-------:|-------|
@@ -118,6 +119,10 @@ ids SilentFit will send.
 | Preview | 2 | `0x11` | | 1 | 164 × 191, shown in the watch's face picker |
 | Month | 4 | `0x02` | | 10 | digit strip 0–9 |
 | Day | 4 | `0x03` | | 10 | |
+| Hour, first digit | 4 | `0x08` | | 10 | one digit per record |
+| Hour, second digit | 4 | `0x09` | | 10 | |
+| Minute, first digit | 4 | `0x0A` | | 10 | |
+| Minute, second digit | 4 | `0x0B` | | 10 | |
 | AM / PM | 2 | `0x1F` | | 2 | |
 | Calories | 4 | `0x40` | | 10 | |
 | Steps | 4 | `0x41` | | 10 | |
@@ -128,10 +133,14 @@ ids SilentFit will send.
 | Hour hand | 1 | `0x05` | | 1 | |
 | Minute hand | 1 | `0x06` | | 1 | |
 
-**Not supported:** digital hour/minute/second numbers, second hand, year, distance,
-SpO₂ and any other id. The firmware's numbering looks regular, but guessing is exactly
-what crashed the watch. `Binding.verified = false` marks these; the compiler refuses
-them and the studio hides them.
+Digital time is drawn digit by digit: the studio's *Hour* and *Minute* elements compile
+to two records each (`0x08`+`0x09`, `0x0A`+`0x0B`) sharing one strip, exactly like the
+store face; the four digits can also be placed individually.
+
+**Not supported:** seconds, second hand, year, distance, SpO₂, off-centre hands and
+any other id. A probe face using ids `0x00–0x0E` boot-looped the watch; `0x08–0x0B`
+are now proven by an official face, so the culprit is among the others. `Binding.verified
+= false` marks these; the compiler refuses them and the studio hides them.
 
 ## 5. Installing
 
@@ -147,23 +156,23 @@ removed. Removing the current face is refused by the app.
 Every file — compiled, imported `.sfface`, or a raw WF file — is checked before upload
 and raw files are checked again at import. A file passes only if:
 
-* header: magic, version `0x0414`, zero flags, one background and one preview, zero
+* header: magic, version `0x0414`, zero flags, counts 1/1 or 0/0, zero
   padding, 240 × 280, size field equals file size, 2–64 records
 * record 1 is the background (opaque 240 × 280, centred); record 2 the preview
-  (opaque 164 × 191 at 0, 0)
+  (opaque 164 × 191 at 0, 0 or 120, 140); compact/long form matches the record kind
 * every long record matches a row of the table in §4 by type, id, frame count and name
   exactly; each live binding appears at most once; `N_DATA4` is immediately followed by
   `NUMBER4`
 * long-record extra bytes and the 23-byte tail match the official bytes; alignment tag
   and anchor agree
-* live images are opaque, untiled, split evenly into their frames, at most 120 px per
-  frame, and lie on screen
+* live images are opaque, untiled, split evenly into their frames, at most 120 px wide
+  and 870 px tall per strip (the largest official strip), and lie on screen
 * hands are ids `0x05`/`0x06` in order, last, full-screen transparent images tiled at
   30, centred, pivot exactly (120, 140), angle 900
 * every image offset and every row/tile offset stays inside the file
 
-The rules are tested against the official face (passes) and a set of mutations (all
-rejected) in `SafetyTest`.
+The rules are tested against both official faces (pass, and re-encode byte for byte)
+and a set of mutations (all rejected) in `SafetyTest`.
 
 ## 7. Face trial (watchdog)
 

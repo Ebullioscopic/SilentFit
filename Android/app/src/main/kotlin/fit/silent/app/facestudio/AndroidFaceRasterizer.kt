@@ -84,7 +84,11 @@ class AndroidFaceRasterizer(private val context: Context) : FaceRasterizer {
             val indices = frameIndices(e, frames, value)
             val total = indices.size * strip.width
             val right = if (e.w > 0) e.x + e.w else e.x + strip.width * (e.binding?.maxDigits ?: 1)
-            var x = if (e.align == "right") right - total else e.x
+            var x = when {
+                e.align == "right" -> right - total
+                e.align == "center" && e.w > 0 && e.binding?.digitIds != null -> e.x + (e.w - total) / 2
+                else -> e.x
+            }
             for (index in indices) {
                 val src = Rect(0, index * strip.frameHeight, strip.width, (index + 1) * strip.frameHeight)
                 canvas.drawBitmap(stripBmp, src, Rect(x, e.y, x + strip.width, e.y + strip.frameHeight), null)

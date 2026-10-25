@@ -82,7 +82,14 @@ data class FaceRecord(
  * A complete "WF" watch face: header, layout records and the PAR images they reference.
  * Records point at images by index; identical images are stored once.
  */
-class WatchFaceFile(val width: Int, val height: Int, val records: List<FaceRecord>, val images: List<ByteArray>) {
+class WatchFaceFile(
+    val width: Int,
+    val height: Int,
+    val records: List<FaceRecord>,
+    val images: List<ByteArray>,
+    /** Header words at 0x08/0x0A; official faces use either 1/1 or 0/0. */
+    val headerCounts: Pair<Int, Int> = 1 to 1,
+) {
 
     fun encode(): ByteArray {
         val tableSize = records.sumOf { 4 + if (it.compact) FaceRecord.SHORT_BODY else FaceRecord.LONG_BODY }
@@ -103,8 +110,8 @@ class WatchFaceFile(val width: Int, val height: Int, val records: List<FaceRecor
         }
         val out = ByteSink(cursor)
         out.u8('W'.code).u8('F'.code).u16(VERSION).u32(0)
-        out.u16(records.count { it.compact && it.type == FaceRecord.TYPE_IMAGE && it.dataId == ID_STATIC }.coerceAtMost(1))
-        out.u16(records.count { it.compact && it.dataId == ID_PREVIEW }.coerceAtMost(1))
+        out.u16(headerCounts.first)
+        out.u16(headerCounts.second)
         out.zeros(0x2A - out.size).u16(width).u16(height).u16(records.size).u32(cursor)
         records.forEachIndexed { i, r ->
             out.u32(recordOffsets[i])
@@ -123,20 +130,22 @@ class WatchFaceFile(val width: Int, val height: Int, val records: List<FaceRecor
 
         fun isFace(d: ByteArray) = d.size > HEADER && d[0] == 'W'.code.toByte() && d[1] == 'F'.code.toByte()
 
+        /** Long records carry an "extern" tag after the 16-byte body; image offsets can never spell it. */
+        fun isLongRecord(d: ByteArray, body: Int) =
+            body + FaceRecord.LONG_BODY <= d.size && String(d, body + FaceRecord.SHORT_BODY, 6, Charsets.US_ASCII) == "extern"
+
         fun decode(d: ByteArray): WatchFaceFile {
             require(isFace(d)) { "Not a WF watch face" }
             val width = Bytes.u16le(d, 0x2A)
             val height = Bytes.u16le(d, 0x2C)
             val count = Bytes.u16le(d, 0x2E)
-            val leadingCompact = Bytes.u16le(d, 0x08) + Bytes.u16le(d, 0x0A)
             val imageIndex = LinkedHashMap<Int, Int>()
             val images = ArrayList<ByteArray>()
             val records = ArrayList<FaceRecord>(count)
             var p = HEADER
             for (i in 0 until count) {
                 val offset = Bytes.u32le(d, p).toInt()
-                val type = Bytes.u8(d, p + 4)
-                val compact = i < leadingCompact || type == FaceRecord.TYPE_HAND
+                val compact = !isLongRecord(d, p + 4)
                 val idx = imageIndex.getOrPut(offset) {
                     val (_, size) = Par.decode(d, offset)
                     images += d.copyOfRange(offset, offset + size)
@@ -145,7 +154,7 @@ class WatchFaceFile(val width: Int, val height: Int, val records: List<FaceRecor
                 records += FaceRecord.read(d, p + 4, idx, compact)
                 p += 4 + if (compact) FaceRecord.SHORT_BODY else FaceRecord.LONG_BODY
             }
-            return WatchFaceFile(width, height, records, images)
+            return WatchFaceFile(width, height, records, images, Bytes.u16le(d, 0x08) to Bytes.u16le(d, 0x0A))
         }
     }
 }

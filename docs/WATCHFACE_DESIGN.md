@@ -16,7 +16,7 @@ only offers data the watch is proven to render.
 |-------|--------------|
 | **Layers** | Every element in drawing order: select, bring forward / send backward, lock |
 | **Style** | The selected element: position, font, size, weight, colour, opacity, alignment, tracking, shape and hand options, delete |
-| **Add** | Live data (hands, AM/PM, day, month, weekday, steps, heart rate, calories, battery), text, shapes (dot ring, ticks, arc, ring, rectangle, segments, dot matrix, red dot) and your own images |
+| **Add** | Live data (hands, digital hour and minute, AM/PM, day, month, weekday, steps, heart rate, calories, battery), text, shapes (dot ring, ticks, arc, ring, rectangle, segments, dot matrix, red dot) and your own images |
 | **Face** | Background colour, pattern (`none`, `dots`, `grid`, `lines`), background photo, name, export, delete |
 
 On the canvas: tap to select, drag to move. Elements snap to the horizontal and vertical
@@ -38,6 +38,7 @@ old one; built-in faces are never touched.
 | Preset | Look |
 |--------|------|
 | **Dot Matrix** | Nothing's dotted dial: Doto numerals, dot hands, red accent, weekday + day |
+| **Dot Matrix Digital** | Large Doto hours over minutes on a dotted field, weekday, day and heart rate |
 | **Instrument** | 60-tick ring, needle minute hand, BPM and steps readouts |
 | **Paper** | Light, printed-manual face with black hands and the date |
 | **Glyph Rings** | Segmented arcs around line hands, step count |
@@ -109,6 +110,8 @@ so you can use as many as you like without cost on the watch.
 | Key | Element | Shows |
 |-----|---------|-------|
 | `hand.hour`, `hand.minute` | hand | analogue time |
+| `time.hour`, `time.minute` | number | digital time, two digits; `align: "center"` with `w` centres them |
+| `time.hour.tens`, `time.hour.units`, `time.minute.tens`, `time.minute.units` | number | one digit each, for free layouts (e.g. a 2 × 2 grid); don't combine with the two-digit version of the same value |
 | `time.ampm` | sprite | AM / PM |
 | `date.month`, `date.day` | number | date |
 | `date.weekday` | sprite | MON … SUN |
@@ -117,8 +120,8 @@ so you can use as many as you like without cost on the watch.
 | `health.heartRate` | number | BPM; shows `--` until there is a reading |
 | `device.battery` | number | battery % |
 
-Digital hour/minute, seconds, year, distance and SpO₂ are **not available**: the watch
-has no proven data id for them. Show the time with hands.
+Seconds, year, distance and SpO₂ are **not available**: no official face for this watch
+uses them yet, so their data ids are unproven.
 
 ### Shapes
 
@@ -139,7 +142,8 @@ bundled under the SIL Open Font License.
 
 ### Limits
 
-* each live character frame ≤ 120 px wide/high; live values must stay on screen
+* live characters ≤ 120 px wide and ≤ 87 px tall (Doto ≈ 70 px font size); live values
+  must stay on screen
 * each binding at most once per face
 * compiled file ≤ 400 KB (typical faces are 15–60 KB)
 

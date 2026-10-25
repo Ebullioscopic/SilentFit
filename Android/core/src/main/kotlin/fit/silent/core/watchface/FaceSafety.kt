@@ -16,9 +16,9 @@ object FaceSafety {
     const val HEIGHT = 280
     const val MAX_BYTES = 400 * 1024
     const val MAX_RECORDS = 64
-    /** Conservative size limits for live glyph frames (the official face uses ≤ 36×13 px). */
+    /** Live glyph limits; the largest official strip is 100×870 (ten 87 px frames). */
     const val MAX_GLYPH = 120
-    const val MAX_STRIP = 1200
+    const val MAX_STRIP = 870
 
     /** A record shape taken from the official face: (type, data id, frames, name). */
     private data class Pattern(val type: Int, val id: Int, val frames: Int, val name: String = "", val unique: Boolean = true)
@@ -30,6 +30,10 @@ object FaceSafety {
         Pattern(FaceRecord.TYPE_NUMBER, 0x03, 10),
         Pattern(FaceRecord.TYPE_NUMBER, 0x40, 10),
         Pattern(FaceRecord.TYPE_NUMBER, 0x41, 10),
+        Pattern(FaceRecord.TYPE_NUMBER, 0x08, 10),
+        Pattern(FaceRecord.TYPE_NUMBER, 0x09, 10),
+        Pattern(FaceRecord.TYPE_NUMBER, 0x0A, 10),
+        Pattern(FaceRecord.TYPE_NUMBER, 0x0B, 10),
         Pattern(FaceRecord.TYPE_NUMBER, 0xFF, 7, "PICBOX1"),
         Pattern(FaceRecord.TYPE_NUMBER, 0xFF, 10, "NUMBER4"),
         Pattern(FaceRecord.TYPE_NUMBER, 0xFF, 1, "N_DATA4"),
@@ -56,7 +60,8 @@ object FaceSafety {
         if (d.size > MAX_BYTES) problems += "File is larger than ${MAX_BYTES / 1024} KB"
         if (Bytes.u16le(d, 2) != WatchFaceFile.VERSION) problems += "Unknown WF version"
         if (Bytes.u32le(d, 4) != 0L) problems += "Unexpected header flags"
-        if (Bytes.u16le(d, 0x08) != 1 || Bytes.u16le(d, 0x0A) != 1) problems += "Face must start with one background and one preview"
+        val counts = Bytes.u16le(d, 0x08) to Bytes.u16le(d, 0x0A)
+        if (counts != (1 to 1) && counts != (0 to 0)) problems += "Unexpected header counts"
         if ((0x0C until 0x2A).any { d[it].toInt() != 0 }) problems += "Unexpected header data"
         val width = Bytes.u16le(d, 0x2A)
         val height = Bytes.u16le(d, 0x2C)
@@ -81,7 +86,8 @@ object FaceSafety {
             val frames = Bytes.u16le(d, b + 2)
             val x = Bytes.s16le(d, b + 4)
             val y = Bytes.s16le(d, b + 6)
-            val compact = i < 2 || type == FaceRecord.TYPE_HAND
+            val compact = !WatchFaceFile.isLongRecord(d, b)
+            if (compact != (i < 2 || type == FaceRecord.TYPE_HAND)) { problems += "Element ${i + 1}: unexpected record layout"; return }
             val bodySize = if (compact) FaceRecord.SHORT_BODY else FaceRecord.LONG_BODY
             if (b + bodySize > d.size) { problems += "Record table is truncated"; return }
             val label = "Element ${i + 1}"
@@ -96,7 +102,8 @@ object FaceSafety {
                     if (!zeros(d, b + 8, 8)) problems += "$label: unexpected data"
                 }
                 i == 1 -> {
-                    if (type != FaceRecord.TYPE_IMAGE || id != WatchFaceFile.ID_PREVIEW || frames != 1 || x != 0 || y != 0) problems += "Second element must be the preview"
+                    val previewAt = x to y
+                    if (type != FaceRecord.TYPE_IMAGE || id != WatchFaceFile.ID_PREVIEW || frames != 1 || (previewAt != (0 to 0) && previewAt != (WIDTH / 2 to HEIGHT / 2))) problems += "Second element must be the preview"
                     if (iw != FaceCompiler.PREVIEW_WIDTH || ih != FaceCompiler.PREVIEW_HEIGHT || alpha != 0 || tile != 0) problems += "Preview must be an opaque ${FaceCompiler.PREVIEW_WIDTH}×${FaceCompiler.PREVIEW_HEIGHT} image"
                     if (!zeros(d, b + 8, 8)) problems += "$label: unexpected data"
                 }
@@ -131,7 +138,7 @@ object FaceSafety {
                     if (alpha != 0 || tile != 0) problems += "$label: image must be opaque"
                     if (frames == 0 || ih % frames != 0) problems += "$label: image does not split into $frames frames"
                     val frameHeight = if (frames == 0) ih else ih / frames
-                    if (iw !in 1..MAX_GLYPH || frameHeight !in 1..MAX_GLYPH || ih > MAX_STRIP) problems += "$label: text is too large (max ${MAX_GLYPH} px per character)"
+                    if (iw !in 1..MAX_GLYPH || frameHeight !in 1..MAX_GLYPH || ih > MAX_STRIP) problems += "$label: text is too large (max ${MAX_STRIP / 10} px tall, ${MAX_GLYPH} px wide per character)"
                     if (x !in -WIDTH..WIDTH || y !in 0..(HEIGHT - frameHeight)) problems += "$label: element is off screen"
                 }
             }

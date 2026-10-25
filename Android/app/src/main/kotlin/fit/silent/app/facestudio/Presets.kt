@@ -89,5 +89,21 @@ object Presets {
         ),
     )
 
-    val all = listOf(dotMatrix, instrument, paper, glyphRings)
+    val dotMatrixDigital = Preset(
+        "dot-matrix-digital", "Dot Matrix Digital", "Large Doto hours over minutes on a dotted field, with date and heart rate.",
+        FaceSpec(
+            name = "Dot Matrix Digital",
+            background = Background("#000000", pattern = "dots", patternColor = "#1A1A1A", patternSpacing = 8),
+            elements = listOf(
+                FaceElement("hour", "number", 0, 30, W, bind = Binding.HOUR.key, font = "doto", size = 70f, weight = 700, align = "center", color = WHITE),
+                FaceElement("minute", "number", 0, 126, W, bind = Binding.MINUTE.key, font = "doto", size = 70f, weight = 700, align = "center", color = GREY),
+                FaceElement("weekday", "sprite", 54, 236, bind = Binding.WEEKDAY.key, font = "space-mono", size = 13f, color = GREY),
+                FaceElement("day", "number", 100, 233, bind = Binding.DAY.key, font = "doto", size = 18f, weight = 700, color = WHITE),
+                FaceElement("dot", "shape", 134, 240, 6, 6, shape = "circle", color = RED),
+                FaceElement("hr", "number", 146, 233, bind = Binding.HEART_RATE.key, font = "doto", size = 18f, weight = 700, color = RED),
+            ),
+        ),
+    )
+
+    val all = listOf(dotMatrix, dotMatrixDigital, instrument, paper, glyphRings)
 }

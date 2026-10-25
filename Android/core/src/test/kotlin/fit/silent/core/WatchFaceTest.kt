@@ -80,15 +80,16 @@ class WatchFaceTest {
 
     /** Byte-exact regression against a vendor face when one is available locally (never committed). */
     @Test fun vendorSampleReencodesIdentically() {
-        val path = System.getenv("SILENTFIT_FACE_SAMPLE") ?: return
-        val original = File(path).readBytes()
-        val face = WatchFaceFile.decode(original)
-        assertContentEquals(original, face.encode())
-        for (img in face.images) {
-            val (image, size) = Par.decode(img)
-            assertEquals(img.size, size)
-            val reencoded = Par.encode(image.pixels, image.width, image.height, image.hasAlpha, image.tile)
-            assertContentEquals(img, reencoded)
+        for (file in officialSamples()) {
+            val original = file.readBytes()
+            val face = WatchFaceFile.decode(original)
+            assertContentEquals(original, face.encode(), file.name)
+            for (img in face.images) {
+                val (image, size) = Par.decode(img)
+                assertEquals(img.size, size)
+                val reencoded = Par.encode(image.pixels, image.width, image.height, image.hasAlpha, image.tile)
+                assertContentEquals(img, reencoded)
+            }
         }
     }
 

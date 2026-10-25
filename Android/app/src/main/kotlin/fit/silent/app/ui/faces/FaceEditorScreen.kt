@@ -566,6 +566,8 @@ private fun AddPanel(spec: FaceSpec, add: (FaceElement) -> Unit, onPickImage: ()
     val groups = listOf(
         "Time" to listOf(
             Item("Hands", R.drawable.ic_clock) { FaceElement(n("hand"), "hand", bind = Binding.MINUTE_HAND.key, length = 92, stroke = 4f, pivotX = 120, pivotY = 140, size = 0f) },
+            Item("Hour", R.drawable.ic_clock) { FaceElement(n("hour"), "number", 30, 90, bind = Binding.HOUR.key, font = "doto", size = 56f, weight = 700) },
+            Item("Minute", R.drawable.ic_clock) { FaceElement(n("minute"), "number", 130, 90, bind = Binding.MINUTE.key, font = "doto", size = 56f, weight = 700) },
             Item("AM/PM", R.drawable.ic_sun) { FaceElement(n("ampm"), "sprite", 100, 40, bind = Binding.AM_PM.key, size = 12f) },
         ),
         "Date" to listOf(

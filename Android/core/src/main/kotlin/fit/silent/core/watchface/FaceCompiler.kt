@@ -79,6 +79,17 @@ class FaceCompiler(private val rasterizer: FaceRasterizer) {
             val anchor = if (e.align == "right") Anchor.RIGHT else Anchor.LEFT
             val boxWidth = if (e.w > 0) e.w else strip.width * (binding?.maxDigits ?: 1)
             val wireX = if (anchor == Anchor.RIGHT) -(spec.width - (e.x + boxWidth)) else e.x
+            binding.digitIds?.let { ids ->
+                // The watch draws hours/minutes digit by digit, each from its own record (official digital face).
+                val width = strip.width * ids.size
+                val start = when {
+                    anchor == Anchor.RIGHT -> e.x + boxWidth - width
+                    e.align == "center" && e.w > 0 -> e.x + (e.w - width) / 2
+                    else -> e.x
+                }
+                ids.forEachIndexed { i, id -> records += FaceRecord(FaceRecord.TYPE_NUMBER, id, frames.size, start + i * strip.width, e.y, image) }
+                continue
+            }
             val type = e.recordType ?: binding?.recordType ?: FaceRecord.TYPE_NUMBER
             val name = e.recordName ?: binding?.recordName.orEmpty()
             val id = e.recordId ?: binding?.dataId ?: 0xFF
