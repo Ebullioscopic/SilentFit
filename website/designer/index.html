@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SilentFit Studio — Watch Face Designer</title>
+  <meta name="description" content="Design watch faces for the Noise NF 2 in your browser. Drag and drop, live preview, hardware safety checks, export for the SilentFit Android app.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⊙</text></svg>">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/designer.css">
+</head>
+<body class="designer-page">
+
+  <!-- TOP BAR -->
+  <header class="designer-topbar">
+    <div class="designer-topbar-left">
+      <a href="../index.html" class="designer-brand">SILENTFIT <span class="designer-brand-sep">/</span> <span class="designer-brand-sub">STUDIO</span></a>
+      <input type="text" id="face-name" class="designer-face-name" value="Untitled" maxlength="32" aria-label="Watch face name">
+    </div>
+
+    <div class="designer-topbar-center">
+      <button id="btn-new" class="topbar-btn" title="New blank face" aria-label="New face">＋</button>
+      <button id="btn-undo" class="topbar-btn" title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">↺</button>
+      <button id="btn-redo" class="topbar-btn" title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo">↻</button>
+      <span class="topbar-sep"></span>
+      <button id="btn-grid" class="topbar-btn" title="Toggle grid (G)" aria-label="Toggle grid">⊞</button>
+      <button id="btn-code" class="topbar-btn" title="Toggle JSON code (Ctrl/Cmd+/)" aria-label="Toggle code view">{ }</button>
+    </div>
+
+    <div class="designer-topbar-right">
+      <button id="btn-presets" class="btn btn-secondary btn-sm">PRESETS</button>
+      <button id="btn-import" class="btn btn-secondary btn-sm">IMPORT</button>
+      <button id="btn-export" class="btn btn-primary btn-sm">EXPORT</button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="designer-main">
+
+    <!-- LEFT: LAYERS -->
+    <aside class="designer-layers" aria-label="Layers">
+      <div class="panel-header">
+        <span class="panel-title">Layers</span>
+        <span>
+          <button id="btn-up" class="panel-action" title="Bring forward (Ctrl/Cmd+])" aria-label="Bring forward">▲</button>
+          <button id="btn-down" class="panel-action" title="Send back (Ctrl/Cmd+[)" aria-label="Send back">▼</button>
+          <button id="btn-dup" class="panel-action" title="Duplicate (Ctrl/Cmd+D)" aria-label="Duplicate">⧉</button>
+          <button id="btn-delete" class="panel-action" title="Delete selected (Delete)" aria-label="Delete">✕</button>
+        </span>
+      </div>
+      <div class="layers-list" id="layers-list"></div>
+      <div class="add-element-bar">
+        <div class="add-element-grid">
+          <button class="add-element-btn" id="add-number"><span class="icon">#</span><span class="text">Data</span></button>
+          <button class="add-element-btn" id="add-sprite"><span class="icon">◈</span><span class="text">Label</span></button>
+          <button class="add-element-btn" id="add-hand"><span class="icon">↻</span><span class="text">Hand</span></button>
+          <button class="add-element-btn" id="add-text"><span class="icon">T</span><span class="text">Text</span></button>
+          <button class="add-element-btn" id="add-shape"><span class="icon">◻</span><span class="text">Shape</span></button>
+          <button class="add-element-btn" id="add-image"><span class="icon">⊞</span><span class="text">Image</span></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: CANVAS (or code) -->
+    <main class="designer-canvas-area">
+      <div class="canvas-toolbar">
+        <div class="zoom-controls">
+          <button id="btn-zoom-out" class="topbar-btn" title="Zoom out (−)" aria-label="Zoom out">−</button>
+          <span id="zoom-level" class="zoom-level">2×</span>
+          <button id="btn-zoom-in" class="topbar-btn" title="Zoom in (+)" aria-label="Zoom in">+</button>
+        </div>
+      </div>
+
+      <div class="canvas-container" id="canvas-container">
+        <div class="canvas-wrapper">
+          <div class="watch-canvas-outer">
+            <canvas id="watch-canvas" width="240" height="280" aria-label="Watch face preview"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-view" id="code-view">
+        <textarea id="code-editor" class="code-editor" spellcheck="false" aria-label="FaceSpec JSON"></textarea>
+      </div>
+
+      <div class="time-scrub-bar">
+        <span class="panel-title">Time</span>
+        <input type="range" id="time-slider" class="time-slider" min="0" max="1439" value="608" aria-label="Preview time">
+        <span id="time-display" class="time-display">10:08</span>
+        <div class="value-overrides" id="value-overrides"></div>
+      </div>
+    </main>
+
+    <!-- RIGHT: INSPECTOR -->
+    <aside class="designer-inspector" aria-label="Inspector">
+      <div class="panel-header"><span class="panel-title">Inspector</span></div>
+      <div class="inspector-scroll" id="inspector-scroll"></div>
+    </aside>
+  </div>
+
+  <!-- STATUS BAR -->
+  <footer class="designer-statusbar">
+    <div class="statusbar-left">
+      <span id="safety-indicator" class="safety-indicator pass" role="status">[SAFETY CHECK PASSED]</span>
+    </div>
+    <div class="statusbar-right">
+      <span id="record-count" class="record-count">0 records</span>
+      <span id="file-size" class="file-size">~0 KB</span>
+      <button class="view-toggle" id="btn-shortcuts">Shortcuts</button>
+    </div>
+  </footer>
+
+  <!-- PRESETS MODAL -->
+  <div class="modal-overlay" id="presets-modal" role="dialog" aria-label="Presets">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Presets</span>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-presets-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT MODAL -->
+  <div class="modal-overlay" id="export-modal" role="dialog" aria-label="Export">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Export</span>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="export-options">
+          <div class="export-option" id="export-sfface" role="button" tabindex="0">
+            <span class="export-option-ext">.sfface</span>
+            <span class="export-option-desc">Package with images. Open it in SilentFit (Faces › Import).</span>
+          </div>
+          <div class="export-option" id="export-json" role="button" tabindex="0">
+            <span class="export-option-ext">.sfface.json</span>
+            <span class="export-option-desc">Plain JSON source. Editable by hand, also importable.</span>
+          </div>
+          <div class="export-option" id="export-bin" role="button" tabindex="0">
+            <span class="export-option-ext">.bin</span>
+            <span class="export-option-desc">Compiled watch file, safety-checked. Import it in SilentFit (Faces › Import) and install.</span>
+          </div>
+          <div class="export-option" id="export-png" role="button" tabindex="0">
+            <span class="export-option-ext">.png</span>
+            <span class="export-option-desc">Preview image at 2× for sharing.</span>
+          </div>
+        </div>
+        <p id="export-note" style="margin-top:16px;font-size:12px;color:var(--text-secondary)"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHORTCUTS MODAL -->
+  <div class="modal-overlay" id="shortcuts-modal" role="dialog" aria-label="Keyboard shortcuts">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Keyboard shortcuts</span>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" style="font-family:var(--font-data);font-size:12px;line-height:2;color:var(--text-secondary)">
+        Undo / Redo — Ctrl/Cmd + Z / Shift+Z<br>
+        Delete — Delete or Backspace<br>
+        Duplicate — Ctrl/Cmd + D<br>
+        Forward / Back — Ctrl/Cmd + ] / [<br>
+        Lock — L · Grid — G · Zoom — + / −<br>
+        Nudge — Arrow keys (Shift = 8 px)<br>
+        Export — Ctrl/Cmd + E · Code — Ctrl/Cmd + /<br>
+        Deselect — Esc
+      </div>
+    </div>
+  </div>
+
+  <!-- PROBLEMS MODAL -->
+  <div class="modal-overlay" id="problems-modal" role="dialog" aria-label="Safety report">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Safety report</span>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="problems-list" style="font-family:var(--font-data);font-size:12px;line-height:1.6"></div>
+    </div>
+  </div>
+
+  <script src="../js/core.js"></script>
+  <script src="../js/zip.js"></script>
+  <script src="../js/renderer.js"></script>
+  <script src="../js/presets.js"></script>
+  <script src="../js/designer.js"></script>
+</body>
+</html>
