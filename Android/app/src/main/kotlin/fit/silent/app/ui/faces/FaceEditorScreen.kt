@@ -533,6 +533,7 @@ private fun ShapeStyle(e: FaceElement, edit: ((FaceElement) -> FaceElement) -> U
             Stepper("Sweep", e.sweep.roundToInt(), { v -> edit { it.copy(sweep = v.toFloat()) } }, 5..360, step = 5, format = { "$it°" })
         }
         "rect" -> Stepper("Corner", e.size.roundToInt(), { v -> edit { it.copy(size = v.toFloat()) } }, 0..60)
+        "halftone" -> Stepper("Spacing", e.size.roundToInt(), { v -> edit { it.copy(size = v.toFloat()) } }, 4..32)
     }
     if (e.shape == "ticks") Stepper("Tick length", e.size.roundToInt(), { v -> edit { it.copy(size = v.toFloat()) } }, 2..30)
     if (e.shape == "segments") Stepper("Lit", e.sweep.roundToInt(), { v -> edit { it.copy(sweep = v.toFloat()) } }, 0..360, step = 15, format = { "${it * 100 / 360}%" })
@@ -613,6 +614,7 @@ private fun AddPanel(spec: FaceSpec, add: (FaceElement) -> Unit, onPickImage: ()
             Item("Rectangle", R.drawable.ic_square) { FaceElement(n("rect"), "shape", 20, 120, 200, 40, shape = "rect", size = 8f, color = "#1A1A1A") },
             Item("Segments", R.drawable.ic_grid_3x3) { FaceElement(n("segments"), "shape", 20, 200, 200, 8, shape = "segments", count = 20, sweep = 216f) },
             Item("Dot matrix", R.drawable.ic_grid_3x3) { FaceElement(n("matrix"), "shape", 16, 16, 208, 24, shape = "dot-matrix", stroke = 1f, color = "#333333") },
+            Item("Dot cloud", R.drawable.ic_circle_dot) { FaceElement(n("cloud"), "shape", 90, -20, 200, 200, shape = "halftone", size = 12f, stroke = 5f, color = "#5A5A5A") },
             Item("Red dot", R.drawable.ic_circle_dot) { FaceElement(n("dot"), "shape", 200, 40, 10, 10, shape = "circle", color = "#D71921") },
         ),
     )

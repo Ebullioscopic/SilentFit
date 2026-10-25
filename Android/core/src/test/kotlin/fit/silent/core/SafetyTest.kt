@@ -132,6 +132,18 @@ class SafetyTest {
         assertEquals(emptyList(), FaceSafety.check(FaceCompiler(raster).compile(spec).bytes))
     }
 
+    @Test fun centredNumbersStoreOffsetFromScreenCentre() {
+        // Official sport face: steps centred on the left dial (x≈58) is stored as -62, calories on the right as +62.
+        val spec = FaceSpec(elements = listOf(
+            FaceElement("s", "number", 14, 120, 88, bind = Binding.STEPS.key, align = "center"),
+            FaceElement("k", "number", 138, 120, 88, bind = Binding.CALORIES.key, align = "center"),
+            FaceElement("d", "number", 0, 200, 240, bind = Binding.DAY.key, align = "center"),
+        ))
+        val records = WatchFaceFile.decode(FaceCompiler(raster).compile(spec).bytes).records.drop(2)
+        assertEquals(listOf(-62, 62, 0), records.map { it.x })
+        assertTrue(records.all { it.anchor == Anchor.CENTER })
+    }
+
     @Test fun minimalFacePasses() {
         assertEquals(emptyList(), FaceSafety.check(face(FaceRecord(4, 0x41, 10, 38, 8, 2))))
     }

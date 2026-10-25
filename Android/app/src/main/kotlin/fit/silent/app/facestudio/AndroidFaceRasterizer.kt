@@ -301,6 +301,23 @@ class AndroidFaceRasterizer(private val context: Context) : FaceRasterizer {
                     y += step
                 }
             }
+            "halftone" -> {
+                // Dot cloud: radius [stroke] at the centre fading to nothing at the edge of the box; [size] = spacing.
+                p.style = Paint.Style.FILL
+                val pitch = max(4f, e.size)
+                val radius = min(rect.width(), rect.height()) / 2f
+                var y = rect.top + pitch / 2
+                while (y < rect.bottom) {
+                    var x = rect.left + pitch / 2
+                    while (x < rect.right) {
+                        val t = 1f - kotlin.math.hypot(x - cx, y - cy) / radius
+                        val dotR = e.stroke * t
+                        if (dotR >= 0.9f) canvas.drawCircle(x, y, dotR, p)
+                        x += pitch
+                    }
+                    y += pitch
+                }
+            }
         }
     }
 

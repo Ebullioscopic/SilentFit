@@ -47,11 +47,16 @@ same rules for your own designs.
 | **Subdials** | Two black subdials with centred steps and calories, after the official sport face |
 | **Glyph Rings** | Thick segmented arcs around bold line hands, step count |
 | **Minimal** | Thick hands, red seconds and four markers only |
+| **Two Hands** | Two thick hands and a red dot at twelve — nothing else |
+| **Index Dots** | Twelve big dots, dotted hands, red seconds |
+| **Cloud** | Off-centre halftone dot cloud behind bold hands, date in the corner |
 | **Dot Matrix Digital** | Large Doto hours over minutes on a dotted field, date and heart rate |
 | **LED Matrix** | 5×7 LED digits with unlit dots showing, BPM and battery |
 | **Segment** | Red seven-segment time over ghost segments, steps, date and battery |
 | **Stack** | Bold Grotesk hours over red minutes, vertical weekday |
 | **Glyph Data** | Compact Doto time above steps, kcal, BPM and battery rows |
+| **Mono LED** | Huge stacked LED hours and minutes, date and battery beside them |
+| **Cloud Digital** | Right-aligned bold time with a halftone cloud from the corner |
 
 ## 2. Code files
 
@@ -149,7 +154,9 @@ uses them yet, so their data ids are unproven.
 `rect` (corner radius = `size`), `circle`, `ring`, `arc` (`startAngle` from 12 o'clock,
 `sweep` degrees), `line` (box diagonal), `ticks` (`count`, length = `size`, every
 `count/12`th is a major tick), `dot-ring` (`count` dots of radius `stroke`), `segments`
-(`count` bars, `sweep/360` of them lit), `dot-matrix` (grid of dots of radius `stroke`).
+(`count` bars, `sweep/360` of them lit), `dot-matrix` (grid of dots of radius `stroke`),
+`halftone` (dot cloud: dots `size` px apart, radius `stroke` at the centre shrinking to
+nothing at the edge — place it partly off-screen for an off-centre cloud).
 
 ### Hands
 

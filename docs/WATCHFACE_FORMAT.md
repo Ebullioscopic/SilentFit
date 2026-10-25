@@ -75,9 +75,9 @@ u8 anchor                                       1 left, 2 centre, 3 right
 ```
 
 For right-aligned values `x` is negative and measured from the right edge
-(`x = -(240 - rightEdge)`), so numbers grow leftwards. Centred values give the centre;
-on the right half of the screen it is negative, measured from the right edge (the
-official sport face uses `62` and `-62` for two symmetric subdials).
+(`x = -(240 - rightEdge)`), so numbers grow leftwards. Centred values store their centre
+**relative to the screen centre** (`screen x = 120 + x`): the official sport face uses
+`-62` for steps on the left subdial and `62` for calories on the right.
 
 ### Record order
 
@@ -138,9 +138,8 @@ store faces), and they are the **only** ids SilentFit will send.
 | Minute hand | 1 | `0x06` | | 1 | |
 | Seconds hand | 1 | `0x07` | | 1 | official sport face |
 
-> **Steps vs calories:** the first analogue face labels `0x41` "Steps" and `0x40`
-> "Kcal"; the sport face puts a footprints icon next to `0x40`. SilentFit follows the
-> first (explicitly labelled) face; if the watch shows them swapped, the ids are swapped.
+> **Steps vs calories:** confirmed by both analogue faces — `0x41` is steps (left
+> subdial with footprints in the sport face, at x = 120 − 62) and `0x40` is calories.
 
 Digital time is drawn digit by digit: the studio's *Hour* and *Minute* elements compile
 to two records each (`0x08`+`0x09`, `0x0A`+`0x0B`), exactly like the first store face;

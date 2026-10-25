@@ -109,8 +109,8 @@ class FaceCompiler(private val rasterizer: FaceRasterizer) {
             val boxWidth = if (e.w > 0) e.w else strip.width * binding.maxDigits
             val wireX = when (anchor) {
                 Anchor.RIGHT -> -(spec.width - (e.x + boxWidth))
-                // Official centred numbers give the centre x; on the right half it is measured from the right edge.
-                Anchor.CENTER -> (e.x + boxWidth / 2).let { c -> if (c > spec.width / 2) -(spec.width - c) else c }
+                // Centred numbers store their centre relative to the screen centre (official sport face: ±62).
+                Anchor.CENTER -> e.x + boxWidth / 2 - spec.width / 2
                 Anchor.LEFT -> e.x
             }
             val type = binding.recordType

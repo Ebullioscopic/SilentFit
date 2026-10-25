@@ -252,5 +252,81 @@ object Presets {
         ),
     )
 
-    val all = listOf(dotMatrix, instrument, paper, subdials, glyphRings, minimal, dotMatrixDigital, ledMatrix, segment, stack, glyphData)
+    // ------------------------------------------------------------------ minimal & dot cloud
+
+    private fun cloud(x: Int, y: Int, size: Int, color: String = "#5A5A5A", spacing: Float = 12f, dot: Float = 5f) =
+        FaceElement("cloud", "shape", x, y, size, size, shape = "halftone", size = spacing, stroke = dot, color = color)
+
+    val cloud = Preset(
+        "cloud", "Cloud", "An off-centre halftone dot cloud behind bold hands, with the date in the corner.",
+        FaceSpec(
+            name = "Cloud",
+            background = Background("#000000"),
+            elements = listOf(
+                cloud(84, -46, 260),
+                FaceElement("twelve", "shape", CX - 5, 20, 10, 10, shape = "circle", color = RED),
+                FaceElement("weekday", "sprite", 22, 206, bind = Binding.WEEKDAY.key, font = "space-mono", size = 18f, weight = 700, color = GREY),
+                FaceElement("day", "number", 22, 228, bind = Binding.DAY.key, font = "doto", size = 30f, weight = 700, color = WHITE),
+            ) + hands("bar", hourWidth = 12f, minuteWidth = 9f, cap = WHITE),
+        ),
+    )
+
+    val cloudDigital = Preset(
+        "cloud-digital", "Cloud Digital", "Right-aligned bold time with a halftone cloud rising from the corner.",
+        FaceSpec(
+            name = "Cloud Digital",
+            background = Background("#000000"),
+            elements = listOf(
+                cloud(-90, 120, 250, color = "#4A4A4A"),
+                FaceElement("weekday", "sprite", 22, 30, bind = Binding.WEEKDAY.key, glyph = "dot-matrix", size = 21f, color = GREY),
+                FaceElement("day", "number", 22, 58, bind = Binding.DAY.key, glyph = "dot-matrix", size = 21f, color = WHITE),
+                FaceElement("hour", "number", 96, 26, 124, bind = Binding.HOUR.key, font = "space-grotesk", size = 66f, weight = 700, align = "right", color = WHITE),
+                FaceElement("minute", "number", 96, 110, 124, bind = Binding.MINUTE.key, font = "space-grotesk", size = 66f, weight = 700, align = "right", color = RED),
+                FaceElement("battery", "number", 160, 228, 60, bind = Binding.BATTERY.key, glyph = "dot-matrix", size = 21f, color = WHITE, align = "right"),
+            ),
+        ),
+    )
+
+    val twoHands = Preset(
+        "two-hands", "Two Hands", "Nothing but two thick hands and a red dot at twelve.",
+        FaceSpec(
+            name = "Two Hands",
+            background = Background("#000000"),
+            elements = listOf(FaceElement("twelve", "shape", CX - 6, 18, 12, 12, shape = "circle", color = RED)) +
+                hands("bar", hourWidth = 14f, minuteWidth = 10f, seconds = false, cap = WHITE),
+        ),
+    )
+
+    val indexDots = Preset(
+        "index-dots", "Index Dots", "Twelve big dots and dotted hands, with a red seconds hand.",
+        FaceSpec(
+            name = "Index Dots",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("dots", "shape", 10, CY - 110, 220, 220, shape = "dot-ring", count = 12, stroke = 5f, color = WHITE),
+                FaceElement("twelve", "shape", CX - 7, CY - 110 + 1, 14, 14, shape = "circle", color = RED),
+            ) + hands("dots", hourWidth = 10f, minuteWidth = 8f, cap = RED),
+        ),
+    )
+
+    val monoLed = Preset(
+        "mono-led", "Mono LED", "Huge stacked LED hours and minutes with the date beside them.",
+        FaceSpec(
+            name = "Mono LED",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("hour", "number", 20, 30, bind = Binding.HOUR.key, glyph = "dot-matrix", ghost = GHOST, size = 70f, color = WHITE),
+                FaceElement("minute", "number", 20, 120, bind = Binding.MINUTE.key, glyph = "dot-matrix", ghost = GHOST, size = 70f, color = RED),
+                FaceElement("weekday", "sprite", 152, 40, bind = Binding.WEEKDAY.key, glyph = "dot-matrix", size = 21f, color = GREY),
+                FaceElement("day", "number", 152, 70, bind = Binding.DAY.key, glyph = "dot-matrix", size = 28f, color = WHITE),
+                label("batLabel", "BAT", 152, 214),
+                FaceElement("battery", "number", 152, 232, bind = Binding.BATTERY.key, glyph = "dot-matrix", size = 21f, color = WHITE),
+            ),
+        ),
+    )
+
+    val all = listOf(
+        dotMatrix, instrument, paper, subdials, glyphRings, minimal, twoHands, indexDots, cloud,
+        dotMatrixDigital, ledMatrix, segment, stack, glyphData, monoLed, cloudDigital,
+    )
 }
