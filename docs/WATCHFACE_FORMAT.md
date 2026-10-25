@@ -110,8 +110,8 @@ For right-aligned values `x` is negative and measured from the right edge
 
 ## 4. Data ids
 
-Only these ids appear in official faces for this watch (an analogue face and a digital
-store face), and they are the **only** ids SilentFit will send.
+Only these ids appear in official faces for this watch (an analogue face and two digital
+store faces), and they are the **only** ids SilentFit will send.
 
 | Binding | Type | Id | Name | Frames | Notes |
 |---------|-----:|---:|------|-------:|-------|
@@ -123,6 +123,8 @@ store face), and they are the **only** ids SilentFit will send.
 | Hour, second digit | 4 | `0x09` | | 10 | |
 | Minute, first digit | 4 | `0x0A` | | 10 | |
 | Minute, second digit | 4 | `0x0B` | | 10 | |
+| Hour (two digits) | 4 | `0x05` | | 10 | whole value in one record; as type 1 the same id is the hour hand |
+| Minute (two digits) | 4 | `0x06` | | 10 | as type 1: minute hand |
 | AM / PM | 2 | `0x1F` | | 2 | |
 | Calories | 4 | `0x40` | | 10 | |
 | Steps | 4 | `0x41` | | 10 | |
@@ -134,8 +136,15 @@ store face), and they are the **only** ids SilentFit will send.
 | Minute hand | 1 | `0x06` | | 1 | |
 
 Digital time is drawn digit by digit: the studio's *Hour* and *Minute* elements compile
-to two records each (`0x08`+`0x09`, `0x0A`+`0x0B`) sharing one strip, exactly like the
-store face; the four digits can also be placed individually.
+to two records each (`0x08`+`0x09`, `0x0A`+`0x0B`), exactly like the first store face;
+the four digits can also be placed individually.
+
+Frames are plain pictures: the watch copies frame *n* to the record's position and
+nothing else. Official faces use this for rotated weekday text, so glyph styles (LED
+dots, 7-segment), rotation and a background patch behind each glyph change only pixels,
+never the record structure. SilentFit gives every single-glyph record (weekday, AM/PM,
+time digits) the exact piece of background behind it, so glyphs sit seamlessly on
+patterns and photos.
 
 **Not supported:** seconds, second hand, year, distance, SpO₂, off-centre hands and
 any other id. A probe face using ids `0x00–0x0E` boot-looped the watch; `0x08–0x0B`

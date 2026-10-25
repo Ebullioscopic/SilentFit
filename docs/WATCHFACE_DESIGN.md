@@ -39,6 +39,10 @@ old one; built-in faces are never touched.
 |--------|------|
 | **Dot Matrix** | Nothing's dotted dial: Doto numerals, dot hands, red accent, weekday + day |
 | **Dot Matrix Digital** | Large Doto hours over minutes on a dotted field, weekday, day and heart rate |
+| **LED Matrix** | 5×7 LED digits with unlit dots showing, red colon, BPM and battery |
+| **Segment** | Red seven-segment time over ghost segments, steps, date and battery |
+| **Stack** | Light Grotesk hours over red minutes, vertical weekday on the edge |
+| **Glyph Data** | Compact Doto time above steps, kcal, BPM and battery rows, like Nothing widgets |
 | **Instrument** | 60-tick ring, needle minute hand, BPM and steps readouts |
 | **Paper** | Light, printed-manual face with black hands and the date |
 | **Glyph Rings** | Segmented arcs around line hands, step count |
@@ -101,6 +105,17 @@ compatible.
 
 Common keys: `id` (unique), `x`, `y`, `w`, `h`, `color` (`#RGB`, `#RRGGBB`,
 `#AARRGGBB`), `opacity` (0–1), `locked`.
+
+Text, numbers and sprites also take:
+
+| Key | Values | Notes |
+|-----|--------|-------|
+| `glyph` | `font` (default), `dot-matrix`, `segment` | `dot-matrix` is a 5×7 LED font (`size` = character height); `segment` draws 7-segment digits (letters fall back to LED dots) |
+| `ghost` | colour or omitted | unlit dots/segments, e.g. `#1C1C1C` |
+| `rotation` | `0`, `90`, `180`, `270` | text and sprites only (official faces rotate the weekday this way) |
+
+Single-glyph values (weekday, AM/PM, `time.*`) are placed in a box: set `w` and
+`align` (`left`, `center`, `right`) to position them inside it.
 
 Static layers (text, shapes, images, background) are merged into one background image,
 so you can use as many as you like without cost on the watch.

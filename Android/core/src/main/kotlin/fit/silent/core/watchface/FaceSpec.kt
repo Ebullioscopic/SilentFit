@@ -101,6 +101,12 @@ data class FaceElement(
     val frames: List<String>? = null,
     val opacity: Float = 1f,
     val locked: Boolean = false,
+    /** Text and live glyphs: "font", "dot-matrix" (5×7 LED dots) or "segment" (7-segment digits). */
+    val glyph: String = "font",
+    /** Colour of unlit dots/segments for "dot-matrix" and "segment"; null hides them. */
+    val ghost: String? = null,
+    /** Text and sprites: 0, 90, 180 or 270 degrees clockwise. */
+    val rotation: Int = 0,
 ) {
     val isLive get() = type == "number" || type == "sprite" || type == "hand"
     val binding get() = bind?.let { Binding.of(it) }

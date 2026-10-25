@@ -93,6 +93,7 @@ import fit.silent.core.watchface.FaceElement
 import fit.silent.core.watchface.FaceSafety
 import fit.silent.core.watchface.FaceSpec
 import fit.silent.core.watchface.colorHex
+import fit.silent.core.watchface.isFixedGlyph
 import fit.silent.core.watchface.parseColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -448,21 +449,26 @@ private fun StylePanel(e: FaceElement, edit: ((FaceElement) -> FaceElement) -> U
         when (e.type) {
             "number", "sprite" -> {
                 BindingPicker(e, edit)
-                FontPicker(e, edit)
+                GlyphStyle(e, edit)
+                if (e.glyph == "font") FontPicker(e, edit)
                 Stepper("Size", e.size.roundToInt(), { v -> edit { it.copy(size = v.toFloat()) } }, 8..140)
-                Label("Grow from", Modifier.padding(top = Space.md))
+                Label(if (e.isFixedGlyph) "Align in box" else "Grow from", Modifier.padding(top = Space.md))
                 Spacer(Modifier.height(Space.sm))
-                SegmentedControl(listOf("left", "right"), e.align, { v -> edit { it.copy(align = v) } }, label = { it })
+                SegmentedControl(if (e.isFixedGlyph) listOf("left", "center", "right") else listOf("left", "right"), e.align, { v -> edit { it.copy(align = v) } }, label = { it })
+                if (e.isFixedGlyph) Stepper("Box width", e.w, { v -> edit { it.copy(w = v) } }, 0..240, step = 4, format = { if (it == 0) "Auto" else "$it px" })
+                if (e.type == "sprite") Rotation(e, edit)
             }
             "text" -> {
                 TextInput(e.text.orEmpty(), { v -> edit { it.copy(text = v.take(40)) } }, "Text")
-                FontPicker(e, edit)
+                GlyphStyle(e, edit)
+                if (e.glyph == "font") FontPicker(e, edit)
                 Stepper("Size", e.size.roundToInt(), { v -> edit { it.copy(size = v.toFloat()) } }, 6..140)
                 Stepper("Tracking", (e.tracking * 100).roundToInt(), { v -> edit { it.copy(tracking = v / 100f) } }, -10..40, format = { "${it}%" })
                 SwitchRow("All caps", e.uppercase, { v -> edit { it.copy(uppercase = v) } })
                 Label("Align", Modifier.padding(top = Space.md))
                 Spacer(Modifier.height(Space.sm))
                 SegmentedControl(listOf("left", "center", "right"), e.align, { v -> edit { it.copy(align = v) } }, label = { it })
+                Rotation(e, edit)
             }
             "shape" -> ShapeStyle(e, edit)
             "image" -> {
@@ -485,6 +491,23 @@ private fun BindingPicker(e: FaceElement, edit: ((FaceElement) -> FaceElement) -
             Chip(b.label, e.bind == b.key, { edit { it.copy(bind = b.key) } })
         }
     }
+}
+
+@Composable
+private fun GlyphStyle(e: FaceElement, edit: ((FaceElement) -> FaceElement) -> Unit) {
+    Label("Glyphs", Modifier.padding(top = Space.md))
+    Spacer(Modifier.height(Space.sm))
+    SegmentedControl(listOf("font", "dot-matrix", "segment"), e.glyph, { v -> edit { it.copy(glyph = v) } }, label = { mapOf("font" to "Font", "dot-matrix" to "LED dots", "segment" to "7-segment")[it]!! })
+    if (e.glyph != "font") {
+        SwitchRow("Show unlit", e.ghost != null, { on -> edit { it.copy(ghost = if (on) "#1F1F1F" else null) } }, subtitle = "Dim dots or segments behind the lit ones")
+    }
+}
+
+@Composable
+private fun Rotation(e: FaceElement, edit: ((FaceElement) -> FaceElement) -> Unit) {
+    Label("Rotation", Modifier.padding(top = Space.md))
+    Spacer(Modifier.height(Space.sm))
+    SegmentedControl(listOf(0, 90, 180, 270), e.rotation, { v -> edit { it.copy(rotation = v) } }, label = { "$it°" })
 }
 
 @Composable

@@ -105,5 +105,90 @@ object Presets {
         ),
     )
 
-    val all = listOf(dotMatrix, dotMatrixDigital, instrument, paper, glyphRings)
+    private const val GHOST = "#1C1C1C"
+
+    private fun colon(y: Int, size: Int = 6, color: String = RED, gap: Int = 22) = listOf(
+        FaceElement("colon1", "shape", CX - size / 2, y, size, size, shape = "circle", color = color),
+        FaceElement("colon2", "shape", CX - size / 2, y + gap, size, size, shape = "circle", color = color),
+    )
+
+    val ledMatrix = Preset(
+        "led-matrix", "LED Matrix", "5×7 LED digits with unlit dots showing, like Nothing's Glyph matrix.",
+        FaceSpec(
+            name = "LED Matrix",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("weekday", "sprite", 0, 40, 120, bind = Binding.WEEKDAY.key, glyph = "dot-matrix", size = 14f, color = GREY, align = "right"),
+                FaceElement("day", "number", 132, 40, bind = Binding.DAY.key, glyph = "dot-matrix", size = 14f, color = WHITE),
+                FaceElement("hour", "number", 0, 96, 106, bind = Binding.HOUR.key, glyph = "dot-matrix", ghost = GHOST, size = 56f, color = WHITE, align = "right"),
+                FaceElement("minute", "number", 134, 96, bind = Binding.MINUTE.key, glyph = "dot-matrix", ghost = GHOST, size = 56f, color = WHITE),
+            ) + colon(112) + listOf(
+                FaceElement("bpmLabel", "text", 40, 196, text = "BPM", font = "space-mono", size = 9f, color = GREY, tracking = 0.1f),
+                FaceElement("hr", "number", 40, 212, bind = Binding.HEART_RATE.key, glyph = "dot-matrix", size = 14f, color = RED),
+                FaceElement("batLabel", "text", 0, 196, 200, text = "BAT", font = "space-mono", size = 9f, color = GREY, tracking = 0.1f, align = "right"),
+                FaceElement("battery", "number", 140, 212, 60, bind = Binding.BATTERY.key, glyph = "dot-matrix", size = 14f, color = WHITE, align = "right"),
+            ),
+        ),
+    )
+
+    val segment = Preset(
+        "segment", "Segment", "Red seven-segment time over ghost segments, with steps and battery readouts.",
+        FaceSpec(
+            name = "Segment",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("stepsLabel", "text", 30, 44, text = "STEPS", font = "space-mono", size = 9f, color = GREY, tracking = 0.1f),
+                FaceElement("steps", "number", 30, 58, bind = Binding.STEPS.key, glyph = "segment", ghost = GHOST, size = 20f, color = WHITE),
+                FaceElement("weekday", "sprite", 150, 44, 60, bind = Binding.WEEKDAY.key, font = "space-mono", size = 10f, color = GREY, align = "right"),
+                FaceElement("day", "number", 170, 58, 40, bind = Binding.DAY.key, glyph = "segment", ghost = GHOST, size = 20f, color = WHITE, align = "right"),
+                FaceElement("hour", "number", 0, 104, 114, bind = Binding.HOUR.key, glyph = "segment", ghost = GHOST, size = 64f, color = RED, align = "right"),
+                FaceElement("minute", "number", 126, 104, 114, bind = Binding.MINUTE.key, glyph = "segment", ghost = GHOST, size = 64f, color = RED),
+            ) + colon(120, size = 7, color = RED, gap = 26) + listOf(
+                FaceElement("bar", "shape", 30, 206, 180, 6, shape = "segments", count = 24, sweep = 360f, color = "#333333"),
+                FaceElement("batLabel", "text", 30, 222, text = "BATTERY", font = "space-mono", size = 9f, color = GREY, tracking = 0.1f),
+                FaceElement("battery", "number", 150, 220, 60, bind = Binding.BATTERY.key, glyph = "segment", size = 16f, color = WHITE, align = "right"),
+            ),
+        ),
+    )
+
+    val stack = Preset(
+        "stack", "Stack", "Hours over minutes in light Grotesk, a vertical weekday on the edge and a red minute line.",
+        FaceSpec(
+            name = "Stack",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("hour", "number", 0, 30, W, bind = Binding.HOUR.key, font = "space-grotesk", size = 64f, weight = 300, align = "center", color = WHITE),
+                FaceElement("minute", "number", 0, 116, W, bind = Binding.MINUTE.key, font = "space-grotesk", size = 64f, weight = 300, align = "center", color = RED),
+                FaceElement("weekday", "sprite", 14, 104, bind = Binding.WEEKDAY.key, font = "space-mono", size = 12f, color = GREY, rotation = 270),
+                FaceElement("day", "number", 206, 128, bind = Binding.DAY.key, glyph = "dot-matrix", size = 14f, color = WHITE),
+                FaceElement("rule", "shape", 72, 226, 96, 1, shape = "rect", size = 0f, color = "#333333"),
+                FaceElement("brand", "text", 0, 236, W, text = "SILENTFIT", font = "space-mono", size = 9f, align = "center", color = GREY, tracking = 0.2f),
+            ),
+        ),
+    )
+
+    val glyphData = Preset(
+        "glyph-data", "Glyph Data", "A Nothing widget stack: compact time, then steps, calories, heart rate and battery rows.",
+        FaceSpec(
+            name = "Glyph Data",
+            background = Background("#000000"),
+            elements = buildList {
+                add(FaceElement("hour", "number", 24, 30, bind = Binding.HOUR.key, font = "doto", size = 40f, weight = 700, color = WHITE))
+                add(FaceElement("sep", "shape", 86, 44, 5, 5, shape = "circle", color = RED))
+                add(FaceElement("sep2", "shape", 86, 60, 5, 5, shape = "circle", color = RED))
+                add(FaceElement("minute", "number", 98, 30, bind = Binding.MINUTE.key, font = "doto", size = 40f, weight = 700, color = WHITE))
+                add(FaceElement("weekday", "sprite", 156, 34, 60, bind = Binding.WEEKDAY.key, glyph = "dot-matrix", size = 12f, color = GREY, align = "right"))
+                add(FaceElement("day", "number", 176, 52, 40, bind = Binding.DAY.key, glyph = "dot-matrix", size = 12f, color = WHITE, align = "right"))
+                val rows = listOf("STEPS" to Binding.STEPS, "KCAL" to Binding.CALORIES, "BPM" to Binding.HEART_RATE, "BATT" to Binding.BATTERY)
+                rows.forEachIndexed { i, (label, b) ->
+                    val y = 104 + i * 36
+                    add(FaceElement("l$i", "text", 24, y + 3, text = label, font = "space-mono", size = 10f, color = GREY, tracking = 0.1f))
+                    add(FaceElement("v$i", "number", 96, y, 120, bind = b.key, glyph = "dot-matrix", size = 14f, color = if (b == Binding.HEART_RATE) RED else WHITE, align = "right"))
+                    add(FaceElement("d$i", "shape", 24, y + 24, 192, 3, shape = "dot-matrix", stroke = 0.6f, color = "#262626"))
+                }
+            },
+        ),
+    )
+
+    val all = listOf(dotMatrix, dotMatrixDigital, ledMatrix, segment, stack, glyphData, instrument, paper, glyphRings)
 }

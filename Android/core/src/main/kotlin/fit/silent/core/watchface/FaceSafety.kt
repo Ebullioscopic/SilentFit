@@ -34,6 +34,9 @@ object FaceSafety {
         Pattern(FaceRecord.TYPE_NUMBER, 0x09, 10),
         Pattern(FaceRecord.TYPE_NUMBER, 0x0A, 10),
         Pattern(FaceRecord.TYPE_NUMBER, 0x0B, 10),
+        // Two-digit hour/minute in one record (official "Jupiter" face); as hands (type 1) the same ids rotate.
+        Pattern(FaceRecord.TYPE_NUMBER, 0x05, 10),
+        Pattern(FaceRecord.TYPE_NUMBER, 0x06, 10),
         Pattern(FaceRecord.TYPE_NUMBER, 0xFF, 7, "PICBOX1"),
         Pattern(FaceRecord.TYPE_NUMBER, 0xFF, 10, "NUMBER4"),
         Pattern(FaceRecord.TYPE_NUMBER, 0xFF, 1, "N_DATA4"),

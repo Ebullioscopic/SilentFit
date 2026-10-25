@@ -17,7 +17,7 @@ no sign-in, and no network permission. Health data stays on your device.
 | **Calls** | Answer, decline or mute from the watch; quick replies by SMS (Android) |
 | **Music** | Now-playing on the watch; play/pause/skip/volume control any player (Android) |
 | **Watch** | Find My Watch, Find My Phone, time sync, live steps/heart rate, watch settings (read; changing them is opt-in, see below) |
-| **Face studio** | Drag-and-drop editor, JSON code files, `.sfface` import/export, Nothing-style presets (Dot Matrix, Dot Matrix Digital, Instrument, Paper, Glyph Rings), safe install with automatic rollback (Android) |
+| **Face studio** | Drag-and-drop editor, JSON code files, `.sfface` import/export, Nothing-style presets (Dot Matrix, Dot Matrix Digital, LED Matrix, Segment, Stack, Glyph Data, Instrument, Paper, Glyph Rings), safe install with automatic rollback (Android) |
 | **Widgets** | Today (dot-matrix steps, goal segments, heart rate, sleep, kcal) and Watch (battery, connection) home-screen widgets (Android) |
 | **Reliability** | Auto-reconnect with backoff, low-priority foreground service, connection log |
 | **Safety** | Only commands observed from the official app are sent by default; faces are checked against the official layout before upload |

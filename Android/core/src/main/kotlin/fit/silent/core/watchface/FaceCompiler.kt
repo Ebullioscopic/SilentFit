@@ -13,8 +13,11 @@ interface FaceRasterizer {
     /** Full-screen background with every static element of [spec] flattened in. */
     fun background(spec: FaceSpec): Raster
 
-    /** Live text frames for [element], each frame the same size so the watch can index them. */
-    fun glyphs(spec: FaceSpec, element: FaceElement, frames: List<String>): GlyphStrip
+    /**
+     * Live text frames for [element], each frame the same size so the watch can index them. With [at] (screen
+     * top-left of the record) the frames sit on the background found there; otherwise on its sampled colour.
+     */
+    fun glyphs(spec: FaceSpec, element: FaceElement, frames: List<String>, at: Pair<Int, Int>? = null): GlyphStrip
 
     /** Full-screen transparent image of the hand pointing at 3 o'clock around its pivot. */
     fun hand(spec: FaceSpec, element: FaceElement): Raster
@@ -27,6 +30,21 @@ class CompiledFace(val file: WatchFaceFile, val bytes: ByteArray, val warnings: 
 
 /** Thrown for designs that would put unverified records on the watch. */
 class UnsafeFaceException(message: String) : IllegalArgumentException(message)
+
+/** Records of this element always show one glyph at a fixed spot (sprites, single digits, digit-split time). */
+val FaceElement.isFixedGlyph get() = type == "sprite" || binding?.digitIds != null || binding?.maxDigits == 1
+
+/** Screen x of each record of a fixed-glyph element whose frames are [glyphWidth] wide. */
+fun FaceElement.glyphSlots(glyphWidth: Int): List<Int> {
+    val count = binding?.digitIds?.size ?: 1
+    val width = glyphWidth * count
+    val start = when {
+        align == "right" && w > 0 -> x + w - width
+        align == "center" && w > 0 -> x + (w - width) / 2
+        else -> x
+    }
+    return List(count) { start + it * glyphWidth }
+}
 
 /** Turns a [FaceSpec] into a watch-installable "WF" file (docs/WATCHFACE_FORMAT.md §4). */
 class FaceCompiler(private val rasterizer: FaceRasterizer) {
@@ -66,41 +84,39 @@ class FaceCompiler(private val rasterizer: FaceRasterizer) {
                 val raster = rasterizer.hand(spec, e)
                 val image = addImage(Par.encode(raster.pixels, raster.width, raster.height, alpha = true, tile = Par.TILE))
                 hands += FaceRecord(
-                    type = e.recordType ?: FaceRecord.TYPE_HAND,
-                    dataId = e.recordId ?: binding!!.dataId,
+                    type = FaceRecord.TYPE_HAND,
+                    dataId = binding.dataId,
                     frames = 1, x = spec.width / 2, y = spec.height / 2, image = image, compact = true,
                     pivotX = e.pivotX, pivotY = e.pivotY, angleTenths = 900,
                 )
                 continue
             }
             val frames = e.glyphFrames()
+            if (e.isFixedGlyph) {
+                // One glyph per record, like the official faces: each strip carries the exact background behind it.
+                val ids = binding.digitIds ?: listOf(binding.dataId)
+                val slots = e.glyphSlots(rasterizer.glyphs(spec, e, frames).width)
+                slots.forEachIndexed { i, x ->
+                    val strip = rasterizer.glyphs(spec, e, frames, x to e.y)
+                    val image = addImage(Par.encode(strip.pixels, strip.width, strip.height))
+                    records += FaceRecord(binding.recordType, ids[i], frames.size, x, e.y, image, name = binding.recordName)
+                }
+                continue
+            }
             val strip = rasterizer.glyphs(spec, e, frames)
             val image = addImage(Par.encode(strip.pixels, strip.width, strip.height))
             val anchor = if (e.align == "right") Anchor.RIGHT else Anchor.LEFT
-            val boxWidth = if (e.w > 0) e.w else strip.width * (binding?.maxDigits ?: 1)
+            val boxWidth = if (e.w > 0) e.w else strip.width * binding.maxDigits
             val wireX = if (anchor == Anchor.RIGHT) -(spec.width - (e.x + boxWidth)) else e.x
-            binding.digitIds?.let { ids ->
-                // The watch draws hours/minutes digit by digit, each from its own record (official digital face).
-                val width = strip.width * ids.size
-                val start = when {
-                    anchor == Anchor.RIGHT -> e.x + boxWidth - width
-                    e.align == "center" && e.w > 0 -> e.x + (e.w - width) / 2
-                    else -> e.x
-                }
-                ids.forEachIndexed { i, id -> records += FaceRecord(FaceRecord.TYPE_NUMBER, id, frames.size, start + i * strip.width, e.y, image) }
-                continue
-            }
-            val type = e.recordType ?: binding?.recordType ?: FaceRecord.TYPE_NUMBER
-            val name = e.recordName ?: binding?.recordName.orEmpty()
-            val id = e.recordId ?: binding?.dataId ?: 0xFF
-            if (binding != null && e.recordId == null) {
-                binding.placeholderName?.let { emptyName ->
-                    val dash = rasterizer.glyphs(spec, e, GlyphSet.PLACEHOLDER.frames)
-                    records += FaceRecord(
-                        FaceRecord.TYPE_NUMBER, 0xFF, 1, wireX, e.y, addImage(Par.encode(dash.pixels, dash.width, dash.height)),
-                        name = emptyName, anchor = anchor,
-                    )
-                }
+            val type = binding.recordType
+            val name = binding.recordName
+            val id = binding.dataId
+            binding.placeholderName?.let { emptyName ->
+                val dash = rasterizer.glyphs(spec, e, GlyphSet.PLACEHOLDER.frames)
+                records += FaceRecord(
+                    FaceRecord.TYPE_NUMBER, 0xFF, 1, wireX, e.y, addImage(Par.encode(dash.pixels, dash.width, dash.height)),
+                    name = emptyName, anchor = anchor,
+                )
             }
             records += FaceRecord(type, id, frames.size, wireX, e.y, image, name = name, anchor = anchor)
         }
