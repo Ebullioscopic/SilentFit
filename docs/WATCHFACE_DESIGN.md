@@ -33,6 +33,10 @@ watch* is enabled only when it passes. Installing asks for confirmation:
 The NF 2 holds one downloaded face. If it is full, SilentFit asks before replacing the
 old one; built-in faces are never touched.
 
+Designs you have installed are listed under **My designs**; everything else is under
+**Drafts**. Long-press a draft to start selecting, tap more to add them, then **Delete**
+(or **Select all** / **Cancel**; Back also cancels).
+
 ### Presets
 
 The NF 2 is a low-resolution LCD, so every preset follows the same rules: strokes ≥ 3 px,
@@ -50,6 +54,10 @@ same rules for your own designs.
 | **Two Hands** | Two thick hands and a red dot at twelve — nothing else |
 | **Index Dots** | Twelve big dots, dotted hands, red seconds |
 | **Cloud** | Off-centre halftone dot cloud behind bold hands, date in the corner |
+| **Braun** | Graphite dial with twelve bold numerals, white batons, red seconds |
+| **Railway** | Station clock: black batons and thick hands on white |
+| **Radar** | Concentric rings and crosshair behind needle hands |
+| **Paper Cloud** | Light dial with a soft halftone cloud, date bottom right |
 | **Dot Matrix Digital** | Large Doto hours over minutes on a dotted field, date and heart rate |
 | **LED Matrix** | 5×7 LED digits with unlit dots showing, BPM and battery |
 | **Segment** | Red seven-segment time over ghost segments, steps, date and battery |
@@ -57,6 +65,9 @@ same rules for your own designs.
 | **Glyph Data** | Compact Doto time above steps, kcal, BPM and battery rows |
 | **Mono LED** | Huge stacked LED hours and minutes, date and battery beside them |
 | **Cloud Digital** | Right-aligned bold time with a halftone cloud from the corner |
+| **Swiss Grid** / **Swiss Dark** | Quadrant poster grid: hours, red minutes, steps, BPM, date, battery |
+| **Big Date** | The date as a Doto hero with LED time underneath |
+| **Terminal** | Monospace console time with a red cursor and data readouts |
 
 ## 2. Code files
 

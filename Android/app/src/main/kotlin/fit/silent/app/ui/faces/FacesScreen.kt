@@ -2,6 +2,14 @@ package fit.silent.app.ui.faces
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import fit.silent.app.data.FaceDocument
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -78,6 +86,8 @@ fun FacesScreen(nav: NavController) {
     var status by remember { mutableStateOf<String?>(null) }
     var retry by remember { mutableStateOf<(() -> Unit)?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var selectedDrafts by remember { mutableStateOf(emptySet<String>()) }
+    BackHandler(enabled = selectedDrafts.isNotEmpty()) { selectedDrafts = emptySet() }
     val c = Nd.colors
 
     fun handleImport(uri: Uri) = scope.launch {
@@ -157,20 +167,37 @@ fun FacesScreen(nav: NavController) {
             }
         }
 
-        item {
+        val installedDesigns = designs.filter { it.watchFaceId != null }
+        val drafts = designs.filter { it.watchFaceId == null }
+        if (installedDesigns.isNotEmpty()) item {
             Section("My designs") {
-                if (designs.isEmpty()) Txt("Start from a preset below or tap + to design your own.", Nd.type.bodySm, color = c.textDisabled)
-                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.md), verticalArrangement = Arrangement.spacedBy(Space.md), maxItemsInEachRow = 2) {
-                    designs.forEach { doc ->
-                        Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { nav.navigate(Routes.face(doc.id)) }) {
-                            FacePreview(doc.spec, Modifier.fillMaxWidth())
-                            Spacer(Modifier.height(Space.sm))
-                            Txt(doc.spec.name, Nd.type.bodySm, maxLines = 1)
-                            Label(if (doc.watchFaceId != null) "On watch · ${doc.watchFaceId}" else "Draft", color = c.textDisabled)
-                        }
+                DesignGrid(installedDesigns, emptySet(), onOpen = { nav.navigate(Routes.face(it.id)) }, onSelect = null) { "On watch · ${it.watchFaceId}" }
+            }
+        }
+
+        item {
+            Section("Drafts", trailing = {
+                if (selectedDrafts.isNotEmpty()) Txt("${selectedDrafts.size} selected", Nd.type.caption, color = c.textSecondary)
+            }) {
+                if (drafts.isEmpty()) Txt("Start from a preset below or tap + to design your own.", Nd.type.bodySm, color = c.textDisabled)
+                else if (selectedDrafts.isEmpty()) Txt("Long-press to select drafts.", Nd.type.caption, color = c.textDisabled)
+                if (selectedDrafts.isNotEmpty()) {
+                    Row(Modifier.fillMaxWidth().padding(bottom = Space.md), horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+                        NdButton("Delete ${selectedDrafts.size}", {
+                            val ids = selectedDrafts.toList()
+                            selectedDrafts = emptySet()
+                            scope.launch { ids.forEach { graph.faces.delete(it) } }
+                        }, style = ButtonStyle.DESTRUCTIVE, icon = R.drawable.ic_trash)
+                        NdButton("Select all", { selectedDrafts = drafts.map { it.id }.toSet() }, style = ButtonStyle.SECONDARY)
+                        NdButton("Cancel", { selectedDrafts = emptySet() }, style = ButtonStyle.GHOST)
                     }
-                    if (designs.size % 2 == 1) Spacer(Modifier.weight(1f))
                 }
+                Spacer(Modifier.height(Space.sm))
+                DesignGrid(
+                    drafts, selectedDrafts,
+                    onOpen = { doc -> if (selectedDrafts.isNotEmpty()) selectedDrafts = selectedDrafts.toggle(doc.id) else nav.navigate(Routes.face(doc.id)) },
+                    onSelect = { doc -> selectedDrafts = selectedDrafts.toggle(doc.id) },
+                ) { "Draft" }
             }
         }
 
@@ -202,6 +229,46 @@ fun FacesScreen(nav: NavController) {
             Txt("Formats: .sfface (zip), .sfface.json (code) and raw watch files (WF). See docs/WATCHFACE_DESIGN.md.", Nd.type.caption, color = c.textDisabled)
         }
         if (designs.isEmpty() && binaries.isEmpty() && installed.isEmpty() && !connection.isConnected) item { EmptyState("Your face studio", "Designs you create or import live here.") }
+    }
+}
+
+private fun Set<String>.toggle(id: String) = if (id in this) this - id else this + id
+
+/** Two-column grid of designs; long-press selects when [onSelect] is given. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun DesignGrid(
+    docs: List<FaceDocument>,
+    selected: Set<String>,
+    onOpen: (FaceDocument) -> Unit,
+    onSelect: ((FaceDocument) -> Unit)?,
+    caption: (FaceDocument) -> String,
+) {
+    val c = Nd.colors
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.md), verticalArrangement = Arrangement.spacedBy(Space.md), maxItemsInEachRow = 2) {
+        docs.forEach { doc ->
+            val isSelected = doc.id in selected
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(if (isSelected) 2.dp else 0.dp, if (isSelected) c.accent else Color.Transparent, RoundedCornerShape(12.dp))
+                    .combinedClickable(
+                        role = Role.Button,
+                        onClickLabel = "Open",
+                        onLongClickLabel = if (onSelect != null) "Select" else null,
+                        onLongClick = onSelect?.let { { it(doc) } },
+                    ) { onOpen(doc) }
+                    .semantics { if (onSelect != null) stateDescription = if (isSelected) "Selected" else "Not selected" }
+                    .padding(if (isSelected) 4.dp else 0.dp),
+            ) {
+                FacePreview(doc.spec, Modifier.fillMaxWidth())
+                Spacer(Modifier.height(Space.sm))
+                Txt(doc.spec.name, Nd.type.bodySm, maxLines = 1)
+                Label(if (isSelected) "Selected" else caption(doc), color = if (isSelected) c.accent else c.textDisabled)
+            }
+        }
+        if (docs.size % 2 == 1) Spacer(Modifier.weight(1f))
     }
 }
 

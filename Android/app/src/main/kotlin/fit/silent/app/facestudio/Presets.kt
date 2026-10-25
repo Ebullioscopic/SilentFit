@@ -265,8 +265,8 @@ object Presets {
             elements = listOf(
                 cloud(84, -46, 260),
                 FaceElement("twelve", "shape", CX - 5, 20, 10, 10, shape = "circle", color = RED),
-                FaceElement("weekday", "sprite", 22, 206, bind = Binding.WEEKDAY.key, font = "space-mono", size = 18f, weight = 700, color = GREY),
-                FaceElement("day", "number", 22, 228, bind = Binding.DAY.key, font = "doto", size = 30f, weight = 700, color = WHITE),
+                FaceElement("weekday", "sprite", 18, 204, 72, bind = Binding.WEEKDAY.key, font = "space-mono", size = 18f, weight = 700, color = GREY, align = "center"),
+                FaceElement("day", "number", 18, 226, 72, bind = Binding.DAY.key, font = "doto", size = 30f, weight = 700, color = WHITE, align = "center"),
             ) + hands("bar", hourWidth = 12f, minuteWidth = 9f, cap = WHITE),
         ),
     )
@@ -278,8 +278,8 @@ object Presets {
             background = Background("#000000"),
             elements = listOf(
                 cloud(-90, 120, 250, color = "#4A4A4A"),
-                FaceElement("weekday", "sprite", 22, 30, bind = Binding.WEEKDAY.key, glyph = "dot-matrix", size = 21f, color = GREY),
-                FaceElement("day", "number", 22, 58, bind = Binding.DAY.key, glyph = "dot-matrix", size = 21f, color = WHITE),
+                FaceElement("weekday", "sprite", 18, 30, 64, bind = Binding.WEEKDAY.key, glyph = "dot-matrix", size = 21f, color = GREY, align = "center"),
+                FaceElement("day", "number", 18, 58, 64, bind = Binding.DAY.key, glyph = "dot-matrix", size = 21f, color = WHITE, align = "center"),
                 FaceElement("hour", "number", 96, 26, 124, bind = Binding.HOUR.key, font = "space-grotesk", size = 66f, weight = 700, align = "right", color = WHITE),
                 FaceElement("minute", "number", 96, 110, 124, bind = Binding.MINUTE.key, font = "space-grotesk", size = 66f, weight = 700, align = "right", color = RED),
                 FaceElement("battery", "number", 160, 228, 60, bind = Binding.BATTERY.key, glyph = "dot-matrix", size = 21f, color = WHITE, align = "right"),
@@ -317,16 +317,144 @@ object Presets {
             elements = listOf(
                 FaceElement("hour", "number", 20, 30, bind = Binding.HOUR.key, glyph = "dot-matrix", ghost = GHOST, size = 70f, color = WHITE),
                 FaceElement("minute", "number", 20, 120, bind = Binding.MINUTE.key, glyph = "dot-matrix", ghost = GHOST, size = 70f, color = RED),
-                FaceElement("weekday", "sprite", 152, 40, bind = Binding.WEEKDAY.key, glyph = "dot-matrix", size = 21f, color = GREY),
-                FaceElement("day", "number", 152, 70, bind = Binding.DAY.key, glyph = "dot-matrix", size = 28f, color = WHITE),
-                label("batLabel", "BAT", 152, 214),
-                FaceElement("battery", "number", 152, 232, bind = Binding.BATTERY.key, glyph = "dot-matrix", size = 21f, color = WHITE),
+                FaceElement("weekday", "sprite", 146, 40, 80, bind = Binding.WEEKDAY.key, glyph = "dot-matrix", size = 21f, color = GREY, align = "center"),
+                FaceElement("day", "number", 146, 70, 80, bind = Binding.DAY.key, glyph = "dot-matrix", size = 28f, color = WHITE, align = "center"),
+                label("batLabel", "BAT", 146, 214, 80, align = "center"),
+                FaceElement("battery", "number", 146, 232, 80, bind = Binding.BATTERY.key, glyph = "dot-matrix", size = 21f, color = WHITE, align = "center"),
             ),
         ),
     )
 
+    // ------------------------------------------------------------------ grids, instruments & more
+
+    /** Swiss-style quadrant grid: hours | minutes over two data columns. */
+    private fun swiss(key: String, title: String, dark: Boolean): Preset {
+        val ink = if (dark) WHITE else INK
+        val rule = if (dark) DIM else "#1A1A1A"
+        val sub = if (dark) GREY else "#555555"
+        fun value(id: String, b: Binding, x: Int, y: Int, color: String = ink) =
+            FaceElement(id, "number", x, y, 120, bind = b.key, font = "space-grotesk", size = 24f, weight = 700, color = color, align = "center")
+        return Preset(
+            key, title, "A Swiss poster grid: bold hours and red minutes over steps, heart rate, date and battery.",
+            FaceSpec(
+                name = title,
+                background = Background(if (dark) "#000000" else "#F2F2F2"),
+                elements = listOf(
+                    FaceElement("vRule", "shape", CX - 1, 18, 3, 244, shape = "rect", size = 0f, color = rule),
+                    FaceElement("hRule", "shape", 12, CY - 1, 216, 3, shape = "rect", size = 0f, color = rule),
+                    FaceElement("mark", "shape", 14, 18, 12, 12, shape = "rect", size = 0f, color = RED),
+                    FaceElement("hour", "number", 0, 36, 120, bind = Binding.HOUR.key, font = "space-grotesk", size = 66f, weight = 700, align = "center", color = ink),
+                    FaceElement("minute", "number", 120, 36, 120, bind = Binding.MINUTE.key, font = "space-grotesk", size = 66f, weight = 700, align = "center", color = RED),
+                    label("stepsLabel", "STEPS", 0, 154, 120, color = sub, align = "center"),
+                    value("steps", Binding.STEPS, 0, 172),
+                    label("bpmLabel", "BPM", 0, 212, 120, color = sub, align = "center"),
+                    value("hr", Binding.HEART_RATE, 0, 230, RED),
+                    FaceElement("weekday", "sprite", 120, 154, 120, bind = Binding.WEEKDAY.key, font = "space-mono", size = 14f, weight = 700, color = sub, align = "center"),
+                    value("day", Binding.DAY, 120, 172),
+                    label("batLabel", "BATTERY", 120, 212, 120, color = sub, align = "center"),
+                    value("battery", Binding.BATTERY, 120, 230),
+                ),
+            ),
+        )
+    }
+
+    val swissGrid = swiss("swiss-grid", "Swiss Grid", dark = false)
+    val swissDark = swiss("swiss-dark", "Swiss Dark", dark = true)
+
+    /** Twelve hour numerals on a circle of [radius] around the pivot. */
+    private fun numerals(radius: Int, size: Float, color: String, font: String = "space-grotesk") = (1..12).map { h ->
+        val a = Math.toRadians(h * 30.0)
+        val x = CX + (radius * kotlin.math.sin(a)).toInt()
+        val y = CY - (radius * kotlin.math.cos(a)).toInt() - (size * 0.62f).toInt()
+        FaceElement("n$h", "text", x, y, text = "$h", font = font, size = size, weight = 700, align = "center", color = color)
+    }
+
+    val braun = Preset(
+        "braun", "Braun", "Industrial-design dial: twelve bold numerals, white batons, red seconds on graphite.",
+        FaceSpec(
+            name = "Braun",
+            background = Background("#1C1C1C"),
+            elements = listOf(
+                FaceElement("minutes", "shape", 6, CY - 114, 228, 228, shape = "ticks", count = 60, size = 6f, stroke = 2f, color = "#555555"),
+            ) + numerals(88, 22f, WHITE) + hands("bar", hourWidth = 11f, minuteWidth = 8f, cap = WHITE),
+        ),
+    )
+
+    val railway = Preset(
+        "railway", "Railway", "Station-clock clarity: black batons on white, thick hands, red seconds.",
+        FaceSpec(
+            name = "Railway",
+            background = Background("#F5F5F5"),
+            elements = ticks(color = INK, minutes = INK) + hands("bar", color = INK, hourWidth = 13f, minuteWidth = 10f, cap = RED),
+        ),
+    )
+
+    val radar = Preset(
+        "radar", "Radar", "Concentric rings and a crosshair behind needle hands, step count below.",
+        FaceSpec(
+            name = "Radar",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("r1", "shape", 10, CY - 110, 220, 220, shape = "ring", stroke = 3f, color = DIM),
+                FaceElement("r2", "shape", 45, CY - 75, 150, 150, shape = "ring", stroke = 3f, color = DIM),
+                FaceElement("r3", "shape", 80, CY - 40, 80, 80, shape = "ring", stroke = 3f, color = DIM),
+                FaceElement("xh", "shape", 10, CY - 1, 220, 3, shape = "rect", size = 0f, color = DIM),
+                FaceElement("xv", "shape", CX - 1, 30, 3, 220, shape = "rect", size = 0f, color = DIM),
+                FaceElement("blip", "shape", 160, 84, 10, 10, shape = "circle", color = RED),
+                FaceElement("steps", "number", 0, 252, W, bind = Binding.STEPS.key, font = "space-grotesk", size = 20f, weight = 700, color = WHITE, align = "center"),
+            ) + hands("needle", hourWidth = 12f, minuteWidth = 10f),
+        ),
+    )
+
+    val paperCloud = Preset(
+        "paper-cloud", "Paper Cloud", "Light dial with a soft halftone cloud, black batons and hands, date bottom right.",
+        FaceSpec(
+            name = "Paper Cloud",
+            background = Background("#EDEDED"),
+            elements = listOf(cloud(-90, 120, 260, color = "#BDBDBD")) + ticks(color = INK, minutes = null) + listOf(
+                FaceElement("weekday", "sprite", 140, 196, 70, bind = Binding.WEEKDAY.key, font = "space-mono", size = 14f, weight = 700, color = "#555555", align = "center"),
+                FaceElement("day", "number", 140, 216, 70, bind = Binding.DAY.key, font = "space-grotesk", size = 24f, weight = 700, color = INK, align = "center"),
+            ) + hands("bar", color = INK, cap = INK),
+        ),
+    )
+
+    val bigDate = Preset(
+        "big-date", "Big Date", "The date as the hero in Doto, with LED time underneath.",
+        FaceSpec(
+            name = "Big Date",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("weekday", "sprite", 0, 30, W, bind = Binding.WEEKDAY.key, glyph = "dot-matrix", size = 21f, color = RED, align = "center"),
+                FaceElement("day", "number", 0, 64, W, bind = Binding.DAY.key, font = "doto", size = 70f, weight = 700, color = WHITE, align = "center"),
+                FaceElement("rule", "shape", 60, 176, 120, 3, shape = "rect", size = 0f, color = DIM),
+                FaceElement("hour", "number", 0, 200, 112, bind = Binding.HOUR.key, glyph = "dot-matrix", ghost = GHOST, size = 28f, color = WHITE, align = "right"),
+                FaceElement("minute", "number", 128, 200, bind = Binding.MINUTE.key, glyph = "dot-matrix", ghost = GHOST, size = 28f, color = WHITE),
+            ) + colon(204, size = 6, color = GREY, gap = 14),
+        ),
+    )
+
+    val terminal = Preset(
+        "terminal", "Terminal", "A monospace console: time with a red cursor, then steps, heart rate and battery readouts.",
+        FaceSpec(
+            name = "Terminal",
+            background = Background("#000000"),
+            elements = buildList {
+                add(label("prompt", "SILENTFIT://", 18, 22))
+                add(FaceElement("hour", "number", 18, 44, bind = Binding.HOUR.key, font = "space-mono", size = 52f, weight = 700, color = WHITE))
+                add(FaceElement("sep", "text", 82, 44, text = ":", font = "space-mono", size = 52f, weight = 700, color = GREY))
+                add(FaceElement("minute", "number", 112, 44, bind = Binding.MINUTE.key, font = "space-mono", size = 52f, weight = 700, color = WHITE))
+                add(FaceElement("cursor", "shape", 182, 58, 16, 48, shape = "rect", size = 0f, color = RED))
+                listOf("> STEPS" to Binding.STEPS, "> BPM" to Binding.HEART_RATE, "> BATT" to Binding.BATTERY).forEachIndexed { i, (text, b) ->
+                    val y = 140 + i * 40
+                    add(label("l$i", text, 18, y + 4))
+                    add(FaceElement("v$i", "number", 110, y, 112, bind = b.key, font = "space-mono", size = 21f, weight = 700, color = if (b == Binding.HEART_RATE) RED else WHITE, align = "right"))
+                }
+            },
+        ),
+    )
+
     val all = listOf(
-        dotMatrix, instrument, paper, subdials, glyphRings, minimal, twoHands, indexDots, cloud,
-        dotMatrixDigital, ledMatrix, segment, stack, glyphData, monoLed, cloudDigital,
+        dotMatrix, instrument, paper, subdials, glyphRings, minimal, twoHands, indexDots, cloud, braun, railway, radar, paperCloud,
+        dotMatrixDigital, ledMatrix, segment, stack, glyphData, monoLed, cloudDigital, swissGrid, swissDark, bigDate, terminal,
     )
 }

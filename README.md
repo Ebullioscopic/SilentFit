@@ -17,7 +17,7 @@ no sign-in, and no network permission. Health data stays on your device.
 | **Calls** | Answer, decline or mute from the watch; quick replies by SMS (Android) |
 | **Music** | Now-playing on the watch; play/pause/skip/volume control any player (Android) |
 | **Watch** | Find My Watch, Find My Phone, time sync, live steps/heart rate, watch settings (read; changing them is opt-in, see below) |
-| **Face studio** | Drag-and-drop editor, JSON code files, `.sfface` import/export, Nothing-style presets (6 analogue, 5 digital, all tuned for legibility on the LCD), safe install with automatic rollback (Android) |
+| **Face studio** | Drag-and-drop editor, JSON code files, `.sfface` import/export, Nothing-style presets (13 analogue, 11 digital, all tuned for legibility on the LCD), safe install with automatic rollback (Android) |
 | **Widgets** | Today (dot-matrix steps, goal segments, heart rate, sleep, kcal) and Watch (battery, connection) home-screen widgets (Android) |
 | **Reliability** | Auto-reconnect with backoff, low-priority foreground service, connection log |
 | **Safety** | Only commands observed from the official app are sent by default; faces are checked against the official layout before upload |
@@ -43,6 +43,7 @@ Details and the reasoning are in [docs/PLATFORM_MAP.md](docs/PLATFORM_MAP.md).
 | [User Guide](docs/USER_GUIDE.md) | Setup, switching from NoiseFit, everyday use, troubleshooting |
 | [Designing Watch Faces](docs/WATCHFACE_DESIGN.md) | Face studio, presets, the `.sfface.json` code format |
 | [Watch-Face Format](docs/WATCHFACE_FORMAT.md) | WF container, PAR image codec, data ids, install flow, safety rules |
+| [Designer Handoff](docs/HANDOFF_WATCHFACE_DESIGNER.md) | Everything needed to build a web/desktop face designer: model, rendering, compiler, safety, UX, style guide |
 | [Platform Map](docs/PLATFORM_MAP.md) | Architecture, per-platform capabilities, battery strategy, build commands |
 | [Berry Protocol](docs/PROTOCOL.md) | Transport, framing, handshake, every command, command safety policy, health-sync flow |
 | [NoiseFit Analysis](docs/NOISEFIT_ANALYSIS.md) | What's inside the NoiseFit APK and how it is structured |
