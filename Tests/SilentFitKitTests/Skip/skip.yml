@@ -1,0 +1,4 @@
+# Skip configuration for SilentFitKitTests module
+
+#build:
+#  contents:

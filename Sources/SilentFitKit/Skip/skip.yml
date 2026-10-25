@@ -1,0 +1,10 @@
+# Skip configuration for SilentFitKit module
+build:
+  contents:
+    - block: 'dependencies'
+      contents:
+        - 'implementation("androidx.core:core-ktx:1.16.0")'
+
+# this is a transpiled Skip Lite module
+skip:
+  mode: 'transpiled'
