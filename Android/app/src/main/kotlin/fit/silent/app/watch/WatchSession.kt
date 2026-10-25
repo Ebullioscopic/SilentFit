@@ -218,6 +218,7 @@ class WatchSession(
         reconnectJob?.cancel()
         closeLink()
         settings.update { it.copy(pairedWatch = null) }
+        endTrial("cleared: watch forgotten")
         _watch.value = WatchInfo(); _battery.value = null; _faces.value = emptyList(); _live.value = null; _settings.value = WatchSettings()
         setPhase(LinkPhase.DISCONNECTED, "Not connected")
     }
@@ -319,6 +320,7 @@ class WatchSession(
                 _sync.update { it.copy(running = false) }
                 failPending("Watch disconnected")
                 if (userDisconnected) { setPhase(LinkPhase.DISCONNECTED, "Disconnected"); return }
+                if (wasConnected && prefs.faceTrial != null) { trialLinkDropped = true; log("face trial: link dropped") }
                 setPhase(if (state == LinkState.FAILED) LinkPhase.FAILED else LinkPhase.DISCONNECTED, message)
                 if (prefs.autoReconnect && prefs.pairedWatch != null && bluetoothOn) scheduleReconnect(if (wasConnected) 3 else null)
             }
@@ -441,8 +443,8 @@ class WatchSession(
 
     private fun ready() {
         setPhase(LinkPhase.CONNECTED, "Connected")
-        // A face trial still pending here means the link dropped before the face proved stable: undo it first.
-        prefs.faceTrial?.let { revertTrial(it) }
+        // A face trial whose link dropped is undone first; otherwise it simply keeps being watched.
+        resumeTrial()
         send(Commands.battery())
         send(Commands.deviceInfo())
         send(Commands.setTime(System.currentTimeMillis(), TimeZone.getDefault()))
@@ -670,52 +672,76 @@ class WatchSession(
     val notice: StateFlow<String?> = _notice.asStateFlow()
     fun clearNotice() { _notice.value = null }
 
-    private val _trial = MutableStateFlow<FaceTrial?>(null)
+    private val _trial = MutableStateFlow(settings.value.faceTrial)
     val faceTrial: StateFlow<FaceTrial?> = _trial.asStateFlow()
     private var trialJob: Job? = null
+    /** The watch dropped the link unexpectedly while a trial was running (what a crash looks like). */
+    private var trialLinkDropped = false
 
     /**
-     * Makes [faceId] current and watches the link for [TRIAL_MS]. If the watch drops the link before then (a crash
-     * reboots it), the next connection switches back to the previous face and removes [faceId].
+     * Makes [faceId] current and watches the link. The trial passes after [TRIAL_MS] of connected time without an
+     * unexpected drop; if the watch drops the link first (a crash reboots it), the next connection switches back to a
+     * built-in face and removes [faceId].
      */
     private fun startTrial(faceId: String) {
         // Fall back to a built-in face: downloaded faces may just have been removed to make room.
         val previous = _faces.value.firstOrNull { it.isCurrent && !it.canRemove }?.id
             ?: _faces.value.firstOrNull { !it.canRemove }?.id
-        if (previous == null) { log("face trial skipped: no fallback face known"); _notice.value = "Face installed. Select it on the watch when ready."; return }
+        if (previous == null) { log("face trial skipped: no fallback face known"); send(Commands.setWatchFace(faceId)); return }
         val trial = FaceTrial(faceId, previous, System.currentTimeMillis())
         settings.update { it.copy(faceTrial = trial) }
         _trial.value = trial
+        trialLinkDropped = false
         send(Commands.setWatchFace(faceId))
         log("face trial: $faceId (fallback $previous)")
-        val gen = generation
+        watchTrial()
+    }
+
+    /** Polls instead of one long delay, so reconnects or a busy link can never leave a trial stuck. */
+    private fun watchTrial() {
         trialJob?.cancel()
         trialJob = scope.launch {
-            delay(TRIAL_MS)
-            if (gen == generation && isConnected && prefs.faceTrial?.faceId == faceId) {
-                settings.update { it.copy(faceTrial = null) }
-                _trial.value = null
-                log("face trial passed: $faceId")
+            var connectedMs = 0L
+            while (isActive) {
+                val trial = prefs.faceTrial ?: break
+                if (trialLinkDropped) break
+                if (isConnected) connectedMs += TRIAL_TICK
+                val current = _faces.value.firstOrNull { it.isCurrent }?.id
+                when {
+                    connectedMs >= TRIAL_MS -> { endTrial("passed: ${trial.faceId}"); break }
+                    // The user picked another face on the watch or in the app: nothing left to protect.
+                    current != null && current != trial.faceId && connectedMs >= 15_000 -> { endTrial("ended: ${current} is now current"); break }
+                }
+                delay(TRIAL_TICK)
             }
         }
     }
 
-    private fun revertTrial(trial: FaceTrial) {
+    private fun endTrial(reason: String) {
         trialJob?.cancel()
+        trialLinkDropped = false
+        if (prefs.faceTrial != null) settings.update { it.copy(faceTrial = null) }
+        _trial.value = null
+        log("face trial $reason")
+    }
+
+    /** Called when the link is ready: undo a trial whose link dropped, otherwise keep watching. */
+    private fun resumeTrial() {
+        val trial = prefs.faceTrial ?: run { _trial.value = null; return }
+        _trial.value = trial
+        if (trialLinkDropped) revertTrial(trial) else watchTrial()
+    }
+
+    private fun revertTrial(trial: FaceTrial) {
         log("face trial failed (link dropped): restoring ${trial.previousFaceId}, removing ${trial.faceId}")
         send(Commands.setWatchFace(trial.previousFaceId))
         send(Commands.removeWatchFace(trial.faceId))
-        settings.update { it.copy(faceTrial = null) }
-        _trial.value = null
+        endTrial("reverted")
         _notice.value = "The watch disconnected while trying the new face, so SilentFit switched back to your previous face and removed the new one."
     }
 
     /** User confirms the face works before the trial window ends. */
-    fun keepTrialFace() = scope.launch {
-        trialJob?.cancel()
-        settings.update { it.copy(faceTrial = null) }
-        _trial.value = null
-    }
+    fun keepTrialFace() = scope.launch { endTrial("kept by user") }
 
     fun saveQuickReplies(replies: List<String>) {
         _replies.value = replies
@@ -770,7 +796,8 @@ class WatchSession(
             log("face blocked: $problem")
             return FaceInstall.Failed("Blocked for safety: $problem")
         }
-        if (_trial.value != null) return FaceInstall.Failed("Wait for the current face trial to finish")
+        // A newer install replaces the face on trial, so the old trial has nothing left to protect.
+        if (prefs.faceTrial != null) endTrial("superseded by a new install")
         val id = newFaceId()
         var lowStorage = false
         return try {
@@ -897,6 +924,7 @@ class WatchSession(
         private val BACKOFF = intArrayOf(5, 10, 20, 40, 60, 120, 300)
         private val STAMP = DateTimeFormatter.ofPattern("HH:mm:ss")
         const val TRIAL_MS = 3 * 60_000L
+        private const val TRIAL_TICK = 5_000L
         private val PREPARE_STATUS = listOf(
             "Ready", "The watch is busy — try again in a moment", "This face is already installed", "Not enough storage on the watch",
             "Battery too low for a transfer", "The watch has a newer version of this face", "Not enough storage — remove a face first",
