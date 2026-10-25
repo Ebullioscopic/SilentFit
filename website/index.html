@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SilentFit — Custom Watch Faces for Noise NF 2</title>
+  <meta name="description" content="SilentFit is an open-source Android companion app for the Noise NF 2 smart watch. Design custom watch faces with our browser-based visual editor.">
+  <meta name="author" content="Hariharan Mudaliar">
+  <meta name="keywords" content="SilentFit, Noise NF 2, watch face, designer, custom watch face, smart watch, Android app">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="SilentFit — Custom Watch Faces for Noise NF 2">
+  <meta property="og:description" content="Design custom watch faces for your Noise NF 2 smart watch with our visual editor.">
+  <meta property="og:type" content="website">
+
+  <!-- Favicon (dot-matrix S) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⊙</text></svg>">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+  <!-- ========== NAVIGATION ========== -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand">
+        <span class="nav-brand-text">SILENTFIT</span>
+        <span class="nav-brand-dot"></span>
+      </a>
+
+      <div class="nav-links" id="nav-links">
+        <a href="#features" class="nav-link active">FEATURES</a>
+        <a href="#presets" class="nav-link">GALLERY</a>
+        <a href="#how-it-works" class="nav-link">HOW IT WORKS</a>
+        <a href="#support" class="nav-link">SUPPORT</a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">◐</button>
+        <a href="designer/index.html" class="btn btn-primary btn-sm nav-cta">OPEN DESIGNER</a>
+      </div>
+
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========== HERO ========== -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <div class="hero-dot-grid"></div>
+      <div class="hero-gradient"></div>
+    </div>
+
+    <div class="hero-watch-preview">
+      <div class="hero-watch-frame">
+        <canvas id="hero-canvas"></canvas>
+      </div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-label">
+        <span class="dot"></span>
+        OPEN SOURCE · NOISE NF 2
+      </div>
+
+      <h1 class="hero-title">
+        YOUR WATCH<br>
+        YOUR <span class="accent">FACE</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        SilentFit is an open-source Android companion app for the Noise NF 2.
+        Design custom watch faces pixel-by-pixel with our browser-based visual editor —
+        LED dots, 7-segment displays, analogue hands, and more.
+      </p>
+
+      <div class="hero-actions">
+        <a href="designer/index.html" class="btn btn-primary">DESIGN YOUR FACE</a>
+        <a href="#presets" class="btn btn-secondary">VIEW PRESETS</a>
+      </div>
+
+      <div class="hero-status">
+        [v1.0] · 240×280 PX · RGB565 · BLUETOOTH CLASSIC
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SPECS ========== -->
+  <section class="specs-section section" id="specs">
+    <div class="container">
+      <div class="section-label animate-on-scroll">
+        <span class="dot"></span>
+        DEVICE SPECIFICATIONS
+      </div>
+
+      <div class="specs-grid">
+        <div class="spec-item animate-on-scroll">
+          <div class="spec-value">240×280</div>
+          <div class="spec-label">SCREEN PIXELS</div>
+        </div>
+        <div class="spec-item animate-on-scroll">
+          <div class="spec-value">RGB565</div>
+          <div class="spec-label">COLOR DEPTH</div>
+        </div>
+        <div class="spec-item animate-on-scroll">
+          <div class="spec-value">28px</div>
+          <div class="spec-label">CORNER RADIUS</div>
+        </div>
+        <div class="spec-item animate-on-scroll">
+          <div class="spec-value">&lt;400KB</div>
+          <div class="spec-label">MAX FILE SIZE</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FEATURES ========== -->
+  <section class="features section" id="features">
+    <div class="container">
+      <div class="section-label animate-on-scroll">
+        <span class="dot"></span>
+        FEATURES
+      </div>
+      <h2 class="section-title animate-on-scroll">Everything you need to<br>craft the perfect face</h2>
+
+      <div class="features-grid">
+        <div class="feature-card animate-on-scroll">
+          <div class="feature-card-dot-grid"></div>
+          <div class="feature-icon">⊙</div>
+          <div class="feature-title">Visual Editor</div>
+          <div class="feature-desc">
+            Drag-and-drop canvas at the watch's true 240×280 resolution. Add text, shapes, hands,
+            and live data bindings with a full inspector panel.
+          </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+          <div class="feature-card-dot-grid"></div>
+          <div class="feature-icon accent">8</div>
+          <div class="feature-title">LED &amp; Segment Glyphs</div>
+          <div class="feature-desc">
+            Three glyph styles — clean font, 5×7 LED dot-matrix with ghost dots,
+            and 7-segment display. Each renders pixel-perfect on the LCD.
+          </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+          <div class="feature-card-dot-grid"></div>
+          <div class="feature-icon">◷</div>
+          <div class="feature-title">Live Data</div>
+          <div class="feature-desc">
+            Bind elements to time, date, steps, calories, heart rate, battery.
+            Preview any time and value combination in real-time.
+          </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+          <div class="feature-card-dot-grid"></div>
+          <div class="feature-icon">↻</div>
+          <div class="feature-title">Analogue Hands</div>
+          <div class="feature-desc">
+            Six hand styles — bar, needle, line, dot, dotted trail, and outline.
+            Hour, minute, and second hands with customizable length, width, and tail.
+          </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+          <div class="feature-card-dot-grid"></div>
+          <div class="feature-icon">◻</div>
+          <div class="feature-title">Shape Library</div>
+          <div class="feature-desc">
+            Ten shape types — rectangles, circles, arcs, tick marks, dot rings,
+            segment bars, halftone clouds, and more. All with antialiasing.
+          </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+          <div class="feature-card-dot-grid"></div>
+          <div class="feature-icon">⛨</div>
+          <div class="feature-title">Safety Validated</div>
+          <div class="feature-desc">
+            Every export passes the same safety rules as the Android app.
+            Only proven record IDs are emitted — your watch is always safe.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== WATCH SHOWCASE ========== -->
+  <section class="watch-preview-section section" id="showcase">
+    <div class="container">
+      <div class="section-label animate-on-scroll">
+        <span class="dot"></span>
+        SHOWCASE
+      </div>
+      <h2 class="section-title animate-on-scroll">Designed for the wrist</h2>
+
+      <div class="watch-showcase">
+        <div class="watch-frame animate-on-scroll">
+          <canvas></canvas>
+          <div class="watch-frame-label">MONO LED</div>
+        </div>
+        <div class="watch-frame animate-on-scroll animate-in-delay-1">
+          <canvas></canvas>
+          <div class="watch-frame-label">INSTRUMENT</div>
+        </div>
+        <div class="watch-frame animate-on-scroll animate-in-delay-2">
+          <canvas></canvas>
+          <div class="watch-frame-label">TERMINAL</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== PRESETS GALLERY ========== -->
+  <section class="presets-section section" id="presets">
+    <div class="container">
+      <div class="section-label animate-on-scroll">
+        <span class="dot"></span>
+        PRESET GALLERY
+      </div>
+      <h2 class="section-title animate-on-scroll">Start from a template</h2>
+
+      <div class="presets-nav animate-on-scroll">
+        <button class="preset-filter active" data-category="all">ALL</button>
+        <button class="preset-filter" data-category="analogue">ANALOGUE</button>
+        <button class="preset-filter" data-category="digital">DIGITAL</button>
+      </div>
+
+      <div class="presets-grid" id="presets-grid"></div>
+    </div>
+  </section>
+
+  <!-- ========== DESIGNER CTA ========== -->
+  <section class="designer-cta section" id="designer-cta">
+    <div class="container">
+      <div class="designer-cta-inner animate-on-scroll">
+        <div class="designer-cta-bg"></div>
+        <div class="designer-cta-content">
+          <h2 class="designer-cta-title">DESIGN<br>YOUR OWN</h2>
+          <p class="designer-cta-desc">
+            Open the visual editor in your browser. No install, no sign-up.
+            Export your creation and install it via the SilentFit Android app.
+          </p>
+          <a href="designer/index.html" class="btn btn-accent">OPEN FACE STUDIO</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HOW IT WORKS ========== -->
+  <section class="how-it-works section" id="how-it-works">
+    <div class="container">
+      <div class="section-label animate-on-scroll">
+        <span class="dot"></span>
+        WORKFLOW
+      </div>
+      <h2 class="section-title animate-on-scroll">From pixel to wrist</h2>
+
+      <div class="steps-grid">
+        <div class="step-card animate-on-scroll">
+          <div class="step-number">01</div>
+          <div class="step-title">Design</div>
+          <div class="step-desc">Open the browser-based Face Studio. Start from a preset or blank canvas. Drag elements, pick glyphs, bind live data.</div>
+        </div>
+        <div class="step-card animate-on-scroll animate-in-delay-1">
+          <div class="step-number">02</div>
+          <div class="step-title">Preview</div>
+          <div class="step-desc">Scrub through the day to see your face at any time. The safety checker validates in real-time — no surprises.</div>
+        </div>
+        <div class="step-card animate-on-scroll animate-in-delay-2">
+          <div class="step-number">03</div>
+          <div class="step-title">Export</div>
+          <div class="step-desc">Download as .sfface.json (editable source) or .sfface (portable bundle). The app re-validates on import.</div>
+        </div>
+        <div class="step-card animate-on-scroll animate-in-delay-3">
+          <div class="step-number">04</div>
+          <div class="step-title">Install</div>
+          <div class="step-desc">Open the file in SilentFit on your phone. Tap Install — the app uploads over Bluetooth with a 3-minute safety trial.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SUPPORT / BUY ME A COFFEE ========== -->
+  <section class="support-section section" id="support">
+    <div class="container">
+      <div class="support-inner">
+        <div class="support-content animate-on-scroll">
+          <div class="section-label">
+            <span class="dot"></span>
+            SUPPORT THE PROJECT
+          </div>
+          <h2>Keep SilentFit alive</h2>
+          <p>
+            SilentFit is free, open-source, and built with care. If you enjoy using it,
+            consider buying me a coffee to keep the project going and the watch faces flowing.
+          </p>
+          <a href="https://buymeacoffee.com/hariharanmudaliar" target="_blank" rel="noopener noreferrer">
+            <img src="assets/img/bmc-button.png" alt="Buy Me a Coffee" class="bmc-button-img">
+          </a>
+
+          <div style="margin-top: var(--space-xl);">
+            <div class="section-label" style="margin-bottom: var(--space-sm);">
+              <span class="dot"></span>
+              ABOUT THE DEVELOPER
+            </div>
+            <p style="font-size: var(--body-sm); color: var(--text-secondary);">
+              Built by <a href="https://tinyurl.com/hariharanmudaliar" target="_blank" rel="noopener noreferrer" style="color: var(--interactive);">Hariharan Mudaliar</a>.
+              Check out my portfolio for more projects and get in touch.
+            </p>
+          </div>
+        </div>
+
+        <div class="support-qr animate-on-scroll">
+          <img src="assets/img/qr-code.png" alt="Buy Me a Coffee QR Code">
+          <span class="label">SCAN TO SUPPORT</span>
+          <span class="caption">buymeacoffee.com/hariharanmudaliar</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="footer-brand-name">SILENTFIT</div>
+          <div class="footer-brand-desc">
+            Open-source companion app for the Noise NF 2.
+            Custom watch faces, your way.
+          </div>
+        </div>
+
+        <div class="footer-links">
+          <div class="footer-column">
+            <h4>PROJECT</h4>
+            <ul>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#presets">Gallery</a></li>
+              <li><a href="designer/index.html">Face Studio</a></li>
+              <li><a href="#how-it-works">How It Works</a></li>
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h4>RESOURCES</h4>
+            <ul>
+              <li><a href="https://github.com/Ebullioscopic/SilentFit" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+              <li><a href="https://tinyurl.com/hariharanmudaliar" target="_blank" rel="noopener noreferrer">Developer</a></li>
+              <li><a href="https://buymeacoffee.com/hariharanmudaliar" target="_blank" rel="noopener noreferrer">Support</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-copyright">
+          © 2026 SILENTFIT · HARIHARAN MUDALIAR · OPEN SOURCE
+        </div>
+        <div class="footer-social">
+          <a href="https://tinyurl.com/hariharanmudaliar" target="_blank" rel="noopener noreferrer">PORTFOLIO</a>
+          <a href="https://buymeacoffee.com/hariharanmudaliar" target="_blank" rel="noopener noreferrer">BMC</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/core.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/presets.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
