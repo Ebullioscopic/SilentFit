@@ -9,6 +9,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.runtime.saveable.rememberSaveable
+import fit.silent.app.ui.components.SegmentedControl
 import fit.silent.app.data.FaceDocument
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -87,13 +89,15 @@ fun FacesScreen(nav: NavController) {
     var retry by remember { mutableStateOf<(() -> Unit)?>(null) }
     var busy by remember { mutableStateOf(false) }
     var selectedDrafts by remember { mutableStateOf(emptySet<String>()) }
+    var tab by rememberSaveable { mutableStateOf(if (designs.any { it.watchFaceId != null }) FaceTab.MINE else FaceTab.PRESETS) }
+    var presetFilter by rememberSaveable { mutableStateOf(PresetFilter.ALL) }
     BackHandler(enabled = selectedDrafts.isNotEmpty()) { selectedDrafts = emptySet() }
     val c = Nd.colors
 
     fun handleImport(uri: Uri) = scope.launch {
         when (val r = graph.faces.import(context.contentResolver, uri)) {
             is ImportResult.Design -> { status = "Imported ${r.doc.spec.name}"; nav.navigate(Routes.face(r.doc.id)) }
-            is ImportResult.Binary -> status = "Imported watch file ${r.binary.name}"
+            is ImportResult.Binary -> { status = "Imported watch file ${r.binary.name}"; tab = FaceTab.FILES }
             is ImportResult.Failed -> status = "Error: ${r.reason}"
         }
     }
@@ -169,67 +173,71 @@ fun FacesScreen(nav: NavController) {
 
         val installedDesigns = designs.filter { it.watchFaceId != null }
         val drafts = designs.filter { it.watchFaceId == null }
-        if (installedDesigns.isNotEmpty()) item {
-            Section("My designs") {
-                DesignGrid(installedDesigns, emptySet(), onOpen = { nav.navigate(Routes.face(it.id)) }, onSelect = null) { "On watch · ${it.watchFaceId}" }
-            }
+        item {
+            Spacer(Modifier.height(Space.xl))
+            SegmentedControl(FaceTab.entries, tab, { tab = it; selectedDrafts = emptySet() }, label = { it.label })
+            Spacer(Modifier.height(Space.lg))
         }
 
-        item {
-            Section("Drafts", trailing = {
-                if (selectedDrafts.isNotEmpty()) Txt("${selectedDrafts.size} selected", Nd.type.caption, color = c.textSecondary)
-            }) {
-                if (drafts.isEmpty()) Txt("Start from a preset below or tap + to design your own.", Nd.type.bodySm, color = c.textDisabled)
-                else if (selectedDrafts.isEmpty()) Txt("Long-press to select drafts.", Nd.type.caption, color = c.textDisabled)
-                if (selectedDrafts.isNotEmpty()) {
-                    Row(Modifier.fillMaxWidth().padding(bottom = Space.md), horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+        when (tab) {
+            FaceTab.MINE -> item {
+                if (installedDesigns.isEmpty()) EmptyState("Nothing installed yet", "Designs you install on the watch appear here.")
+                else DesignGrid(installedDesigns, emptySet(), onOpen = { nav.navigate(Routes.face(it.id)) }, onSelect = null) { "On watch · ${it.watchFaceId}" }
+            }
+            FaceTab.DRAFTS -> item {
+                if (drafts.isEmpty()) EmptyState("No drafts", "Open a preset or tap + to start a design.")
+                else {
+                    if (selectedDrafts.isEmpty()) Txt("Long-press to select drafts.", Nd.type.caption, Modifier.padding(bottom = Space.md), c.textDisabled)
+                    else Row(Modifier.fillMaxWidth().padding(bottom = Space.md), horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
                         NdButton("Delete ${selectedDrafts.size}", {
                             val ids = selectedDrafts.toList()
                             selectedDrafts = emptySet()
                             scope.launch { ids.forEach { graph.faces.delete(it) } }
                         }, style = ButtonStyle.DESTRUCTIVE, icon = R.drawable.ic_trash)
-                        NdButton("Select all", { selectedDrafts = drafts.map { it.id }.toSet() }, style = ButtonStyle.SECONDARY)
+                        NdButton("All", { selectedDrafts = drafts.map { it.id }.toSet() }, style = ButtonStyle.SECONDARY)
                         NdButton("Cancel", { selectedDrafts = emptySet() }, style = ButtonStyle.GHOST)
                     }
+                    DesignGrid(
+                        drafts, selectedDrafts,
+                        onOpen = { doc -> if (selectedDrafts.isNotEmpty()) selectedDrafts = selectedDrafts.toggle(doc.id) else nav.navigate(Routes.face(doc.id)) },
+                        onSelect = { doc -> selectedDrafts = selectedDrafts.toggle(doc.id) },
+                    ) { "Draft" }
                 }
-                Spacer(Modifier.height(Space.sm))
-                DesignGrid(
-                    drafts, selectedDrafts,
-                    onOpen = { doc -> if (selectedDrafts.isNotEmpty()) selectedDrafts = selectedDrafts.toggle(doc.id) else nav.navigate(Routes.face(doc.id)) },
-                    onSelect = { doc -> selectedDrafts = selectedDrafts.toggle(doc.id) },
-                ) { "Draft" }
             }
-        }
-
-        item {
-            Section("Presets") {
+            FaceTab.PRESETS -> item {
+                Row(Modifier.padding(bottom = Space.md), horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
+                    PresetFilter.entries.forEach { f -> Chip(f.label, presetFilter == f, { presetFilter = f }) }
+                }
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.md), verticalArrangement = Arrangement.spacedBy(Space.lg), maxItemsInEachRow = 2) {
-                    Presets.all.forEach { p ->
+                    val shown = Presets.all.filter { presetFilter.matches(it) }
+                    shown.forEach { p ->
                         Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) {
                             scope.launch { nav.navigate(Routes.face(graph.faces.create(p.spec, p.key).id)) }
                         }) {
                             FacePreview(p.spec, Modifier.fillMaxWidth(), "${p.title} preset")
                             Spacer(Modifier.height(Space.sm))
                             Txt(p.title, Nd.type.bodySm, maxLines = 1)
-                            Label("Ready", color = c.textDisabled)
+                            Label(if (p.isAnalogue) "Analogue" else "Digital", color = c.textDisabled)
                         }
                     }
+                    if (shown.size % 2 == 1) Spacer(Modifier.weight(1f))
                 }
             }
-        }
-
-        if (binaries.isNotEmpty()) item {
-            Section("Imported watch files") {
+            FaceTab.FILES -> item {
+                if (binaries.isEmpty()) EmptyState("No watch files", "Import a .bin watch face with the download button above.")
                 binaries.forEach { b -> BinaryRow(b, connection.isConnected && !busy && confirm == null, { confirm = b.name to suspend { b.file.readBytes() } }, { scope.launch { graph.faces.deleteBinary(b) } }) }
+                Spacer(Modifier.height(Space.xl))
+                Txt("Formats: .sfface (zip), .sfface.json (code) and raw watch files (WF).", Nd.type.caption, color = c.textDisabled)
             }
         }
-
-        item {
-            Spacer(Modifier.height(Space.xl))
-            Txt("Formats: .sfface (zip), .sfface.json (code) and raw watch files (WF). See docs/WATCHFACE_DESIGN.md.", Nd.type.caption, color = c.textDisabled)
-        }
-        if (designs.isEmpty() && binaries.isEmpty() && installed.isEmpty() && !connection.isConnected) item { EmptyState("Your face studio", "Designs you create or import live here.") }
     }
+}
+
+private enum class FaceTab(val label: String) { MINE("Mine"), DRAFTS("Drafts"), PRESETS("Presets"), FILES("Files") }
+
+private enum class PresetFilter(val label: String) {
+    ALL("All"), ANALOGUE("Analogue"), DIGITAL("Digital");
+    fun matches(p: fit.silent.app.facestudio.Preset) = this == ALL || (this == ANALOGUE) == p.isAnalogue
 }
 
 private fun Set<String>.toggle(id: String) = if (id in this) this - id else this + id
@@ -308,22 +316,14 @@ fun InstallConfirm(name: String, onInstall: (wear: Boolean) -> Unit, onCancel: (
     }
 }
 
-/** Shows a running face trial and any message from the watchdog. */
+/** The trial watchdog runs silently; only a rollback is worth interrupting for. */
 @Composable
 fun FaceTrialBanner() {
     val session = LocalGraph.current.session
     val trial by session.faceTrial.collectAsStateWithLifecycle()
     val notice by session.notice.collectAsStateWithLifecycle()
     val c = Nd.colors
-    trial?.let { t ->
-        Card(Modifier.padding(bottom = Space.md)) {
-            Label("Trying face ${t.faceId}")
-            Spacer(Modifier.height(Space.sm))
-            Txt("Keep the watch near your phone. If it restarts in the next few minutes, SilentFit restores a built-in face.", Nd.type.bodySm, color = c.textSecondary)
-            Spacer(Modifier.height(Space.md))
-            NdButton("It works — keep it", { session.keepTrialFace() }, style = ButtonStyle.SECONDARY)
-        }
-    }
+    if (trial != null) InlineStatus("[WATCHING NEW FACE]", Modifier.padding(bottom = Space.md), c.textDisabled)
     notice?.let { n ->
         Card(Modifier.padding(bottom = Space.md)) {
             Txt(n, Nd.type.bodySm, color = c.textPrimary)

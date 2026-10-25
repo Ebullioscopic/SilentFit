@@ -745,6 +745,15 @@ Source: `app/.../facestudio/Presets.kt` (port to JSON files; each is a `FaceSpec
 | `swiss-grid` / `swiss-dark` | digital | Quadrant poster grid |
 | `big-date` | digital | Doto date hero, LED time |
 | `terminal` | digital | Monospace console with red cursor |
+| `f1-telemetry` | digital | Kerb stripes, lap-time digits, rev bar, telemetry |
+| `hud` | digital | Corner brackets, target ring, mono time |
+| `neon-grid` | digital | Red 7-segment over ghost segments on a grid |
+| `dot-time` | digital | LED time only |
+| `data-hero` | digital | Steps hero, small time |
+| `f1-speedo` | analogue | Tachometer arc with redline |
+| `orbit` | analogue | Orbit rings, red satellite seconds |
+| `one-hand` | analogue | Single red hour hand |
+| `split` | analogue | Half light, half dark, red hands |
 
 ---
 

@@ -37,6 +37,7 @@ import fit.silent.app.ui.components.Stepper
 import fit.silent.app.ui.components.SwitchRow
 import fit.silent.app.ui.components.TextInput
 import fit.silent.app.ui.components.Txt
+import fit.silent.app.data.TodayLayout
 import fit.silent.app.ui.theme.Nd
 import fit.silent.app.ui.theme.Space
 import fit.silent.app.ui.theme.ThemeMode
@@ -62,6 +63,9 @@ fun SettingsScreen(nav: NavController) {
         item {
             Section("Appearance") {
                 SegmentedControl(ThemeMode.entries, settings.themeMode, { m -> graph.settings.update { it.copy(themeMode = m) } }, label = { it.name.lowercase() })
+                Label("Today layout", Modifier.padding(top = Space.md))
+                Spacer(Modifier.height(Space.sm))
+                SegmentedControl(TodayLayout.entries, settings.todayLayout, { l -> graph.settings.update { it.copy(todayLayout = l) } }, label = { if (it == TodayLayout.DIALS) "Dials" else "Text" })
             }
         }
         item {

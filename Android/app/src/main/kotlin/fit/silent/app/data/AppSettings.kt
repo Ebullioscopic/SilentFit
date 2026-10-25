@@ -26,6 +26,7 @@ data class AppSettings(
     val quietWhileScreenOn: Boolean = false,
     val quickReplies: List<String> = listOf("On my way", "Can't talk now", "Call you later", "OK", "Thanks!"),
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val todayLayout: TodayLayout = TodayLayout.DIALS,
     /** Sends commands whose field layout was not observed from the official app (core CommandPolicy). Off by default. */
     val experimentalWatchControls: Boolean = false,
     /** A face that was just made current; reverted automatically if the watch drops the link soon after. */
@@ -35,3 +36,7 @@ data class AppSettings(
 
 @Serializable
 data class FaceTrial(val faceId: String, val previousFaceId: String, val startedAt: Long)
+
+/** Today screen style: instrument dials or compact text rows. */
+@Serializable
+enum class TodayLayout { DIALS, TEXT }

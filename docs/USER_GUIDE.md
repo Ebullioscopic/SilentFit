@@ -45,7 +45,7 @@ again.
 
 | Tab | What you'll find |
 |-----|------------------|
-| **Today** | Connection and battery, activity rings (steps, calories, active minutes), heart rate, sleep, SpO₂, stress, distance and stand hours. Pull down to sync. |
+| **Today** | Connection and battery, then either **Dials** (segmented activity rings for steps, calories and active minutes; heart-rate, SpO₂, stress, standing, distance and watch-battery dials) or **Text** rows — switch with the button next to Settings or in *Settings › Appearance*. Hourly steps and last sleep follow. Tap any dial for its trend. |
 | **Trends** | Week/month averages with charts. Tap a metric for day-by-day detail, sleep stages and statistics. |
 | **Faces** | The face studio: presets, your designs, imported files and the faces on your watch. See [Designing Watch Faces](WATCHFACE_DESIGN.md). |
 | **Watch** | Find My Watch, sync, battery, the watch's settings (monitoring, reminders, alarms, display, apps), quick replies, notifications, device details. |

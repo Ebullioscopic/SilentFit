@@ -22,20 +22,21 @@ only offers data the watch is proven to render.
 On the canvas: tap to select, drag to move. Elements snap to the horizontal and vertical
 centre. Undo/redo sit in the header; the code button opens the same face as JSON.
 
-Below the canvas the editor shows the **safety check** result as you work. *Install on
-watch* is enabled only when it passes. Installing asks for confirmation:
+Below the canvas the editor shows the **safety check** result as you work. The install
+buttons are enabled only when it passes:
 
-* **Install & wear** — installs and selects the face as a 3-minute trial. If the watch
-  disconnects during the trial, SilentFit switches back to a built-in face and removes
-  the new one. Tap *It works — keep it* to end the trial early.
+* **Install & wear** — installs and selects the face. SilentFit quietly watches the
+  connection for 3 minutes; if the watch disconnects, it switches back to a built-in face,
+  removes the new one and tells you. No confirmation is needed.
 * **Install only** — installs; select it later from the watch or the *On your watch* list.
 
 The NF 2 holds one downloaded face. If it is full, SilentFit asks before replacing the
 old one; built-in faces are never touched.
 
-Designs you have installed are listed under **My designs**; everything else is under
-**Drafts**. Long-press a draft to start selecting, tap more to add them, then **Delete**
-(or **Select all** / **Cancel**; Back also cancels).
+Below *On your watch* the Faces tab has four tabs: **Mine** (designs installed on the
+watch), **Drafts**, **Presets** (filter *All / Analogue / Digital*) and **Files**
+(imported watch files). In Drafts, long-press to start selecting, tap more, then
+**Delete** (or **All** / **Cancel**; Back also cancels).
 
 ### Presets
 
@@ -58,6 +59,10 @@ same rules for your own designs.
 | **Railway** | Station clock: black batons and thick hands on white |
 | **Radar** | Concentric rings and crosshair behind needle hands |
 | **Paper Cloud** | Light dial with a soft halftone cloud, date bottom right |
+| **F1 Rev Dial** | Tachometer arc with a red redline, needle hands, steps as "speed" |
+| **Orbit** | Orbit rings with a red satellite dot instead of a seconds hand |
+| **One Hand** | A single red hour hand over minute marks |
+| **Split** | Half paper, half black, red hands crossing both |
 | **Dot Matrix Digital** | Large Doto hours over minutes on a dotted field, date and heart rate |
 | **LED Matrix** | 5×7 LED digits with unlit dots showing, BPM and battery |
 | **Segment** | Red seven-segment time over ghost segments, steps, date and battery |
@@ -68,6 +73,11 @@ same rules for your own designs.
 | **Swiss Grid** / **Swiss Dark** | Quadrant poster grid: hours, red minutes, steps, BPM, date, battery |
 | **Big Date** | The date as a Doto hero with LED time underneath |
 | **Terminal** | Monospace console time with a red cursor and data readouts |
+| **F1 Telemetry** | Kerb stripes, bold lap-time digits, rev bar, steps / BPM / fuel (battery) |
+| **HUD** | Corner brackets, target ring, mono time, HR and system readouts |
+| **Neon Grid** | Red 7-segment time over ghost segments on a fine grid |
+| **Dot Time** | Only the time in LED dots |
+| **Data Hero** | Steps as a Doto hero, small time on top, kcal and BPM below |
 
 ## 2. Code files
 

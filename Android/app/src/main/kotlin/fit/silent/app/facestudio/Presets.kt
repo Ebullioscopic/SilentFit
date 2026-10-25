@@ -5,7 +5,9 @@ import fit.silent.core.watchface.Binding
 import fit.silent.core.watchface.FaceElement
 import fit.silent.core.watchface.FaceSpec
 
-data class Preset(val key: String, val title: String, val description: String, val spec: FaceSpec, val experimental: Boolean = false)
+data class Preset(val key: String, val title: String, val description: String, val spec: FaceSpec, val experimental: Boolean = false) {
+    val isAnalogue get() = spec.elements.any { it.type == "hand" }
+}
 
 /**
  * Built-in designs for the NF 2's 240×280 LCD. The panel is low resolution, so every preset follows the same
@@ -453,8 +455,177 @@ object Presets {
         ),
     )
 
+    // ------------------------------------------------------------------ racing, futuristic, minimal combinations
+
+    private fun value(id: String, b: Binding, x: Int, y: Int, w: Int, color: String = WHITE, size: Float = 24f, align: String = "center") =
+        FaceElement(id, "number", x, y, w, bind = b.key, font = "space-grotesk", size = size, weight = 700, color = color, align = align)
+
+    val f1Telemetry = Preset(
+        "f1-telemetry", "F1 Telemetry", "Timing-tower graphics: kerb stripes, bold lap-time digits, rev bar and telemetry readouts.",
+        FaceSpec(
+            name = "F1 Telemetry",
+            background = Background("#000000"),
+            elements = buildList {
+                repeat(12) { i -> add(FaceElement("kerb$i", "shape", i * 20, 14, 20, 8, shape = "rect", size = 0f, color = if (i % 2 == 0) RED else WHITE)) }
+                add(label("lapLabel", "LAP TIME", 18, 36))
+                add(FaceElement("pBox", "shape", 186, 34, 38, 24, shape = "rect", size = 3f, color = RED))
+                add(FaceElement("pText", "text", 186, 36, 38, text = "P1", font = "space-grotesk", size = 17f, weight = 700, align = "center", color = WHITE))
+                add(FaceElement("hour", "number", 14, 58, 96, bind = Binding.HOUR.key, font = "space-grotesk", size = 66f, weight = 700, align = "right", color = WHITE))
+                add(FaceElement("c1", "shape", 114, 76, 8, 8, shape = "rect", size = 0f, color = RED))
+                add(FaceElement("c2", "shape", 114, 104, 8, 8, shape = "rect", size = 0f, color = RED))
+                add(FaceElement("minute", "number", 126, 58, 96, bind = Binding.MINUTE.key, font = "space-grotesk", size = 66f, weight = 700, color = WHITE))
+                add(FaceElement("rpm", "shape", 18, 156, 204, 14, shape = "segments", count = 15, sweep = 264f, color = RED))
+                add(label("spdLabel", "STEPS", 14, 188, 72, align = "center"))
+                add(value("steps", Binding.STEPS, 14, 206, 72, size = 22f))
+                add(label("hrLabel", "BPM", 86, 188, 68, align = "center"))
+                add(value("hr", Binding.HEART_RATE, 86, 206, 68, RED, 22f))
+                add(label("fuelLabel", "FUEL", 154, 188, 72, align = "center"))
+                add(value("battery", Binding.BATTERY, 154, 206, 72, size = 22f))
+            },
+        ),
+    )
+
+    val f1Speedo = Preset(
+        "f1-speedo", "F1 Rev Dial", "A tachometer dial with a red redline, needle hands and steps as speed.",
+        FaceSpec(
+            name = "F1 Rev Dial",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("track", "shape", 12, CY - 108, 216, 216, shape = "arc", startAngle = 225f, sweep = 270f, stroke = 8f, color = DIM),
+                FaceElement("redline", "shape", 12, CY - 108, 216, 216, shape = "arc", startAngle = 90f, sweep = 45f, stroke = 8f, color = RED),
+                FaceElement("ticks", "shape", 26, CY - 94, 188, 188, shape = "ticks", count = 27, startAngle = 225f, sweep = 280f, size = 12f, stroke = 3f, color = WHITE),
+                label("rpm", "RPM X1000", 0, 92, W, align = "center"),
+                label("spd", "STEPS", 0, 196, W, align = "center"),
+                value("steps", Binding.STEPS, 0, 214, W, size = 26f),
+            ) + hands("needle", hourWidth = 12f, minuteWidth = 10f),
+        ),
+    )
+
+    val hud = Preset(
+        "hud", "HUD", "A head-up display: corner brackets, a target ring, mono time and system readouts.",
+        FaceSpec(
+            name = "HUD",
+            background = Background("#000000"),
+            elements = buildList {
+                val b = 26; val t = 4; val m = 12
+                listOf(m to m, W - m - b to m, m to 280 - m - b, W - m - b to 280 - m - b).forEachIndexed { i, (x, y) ->
+                    val right = i % 2 == 1; val bottom = i >= 2
+                    add(FaceElement("bh$i", "shape", x, if (bottom) y + b - t else y, b, t, shape = "rect", size = 0f, color = WHITE))
+                    add(FaceElement("bv$i", "shape", if (right) x + b - t else x, y, t, b, shape = "rect", size = 0f, color = WHITE))
+                }
+                add(FaceElement("ring", "shape", 40, 60, 160, 160, shape = "ring", stroke = 3f, color = DIM))
+                add(FaceElement("ringTicks", "shape", 40, 60, 160, 160, shape = "ticks", count = 4, size = 12f, stroke = 3f, color = RED))
+                add(FaceElement("hour", "number", 0, 108, 116, bind = Binding.HOUR.key, font = "space-mono", size = 44f, weight = 700, align = "right", color = WHITE))
+                add(FaceElement("minute", "number", 124, 108, bind = Binding.MINUTE.key, font = "space-mono", size = 44f, weight = 700, color = WHITE))
+                add(FaceElement("c1", "shape", CX - 3, 122, 6, 6, shape = "rect", size = 0f, color = RED))
+                add(FaceElement("c2", "shape", CX - 3, 138, 6, 6, shape = "rect", size = 0f, color = RED))
+                add(label("hrLabel", "HR", 46, 36))
+                add(FaceElement("hr", "number", 76, 32, bind = Binding.HEART_RATE.key, glyph = "dot-matrix", size = 21f, color = RED))
+                add(label("sysLabel", "SYS", 46, 236))
+                add(FaceElement("battery", "number", 84, 232, bind = Binding.BATTERY.key, glyph = "dot-matrix", size = 21f, color = WHITE))
+                add(FaceElement("day", "number", 150, 232, 44, bind = Binding.DAY.key, glyph = "dot-matrix", size = 21f, color = GREY, align = "right"))
+            },
+        ),
+    )
+
+    val orbit = Preset(
+        "orbit", "Orbit", "Fine orbit rings with a red satellite instead of a seconds hand.",
+        FaceSpec(
+            name = "Orbit",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("orbit1", "shape", 10, CY - 110, 220, 220, shape = "dot-ring", count = 60, stroke = 2f, color = "#5A5A5A"),
+                FaceElement("orbit2", "shape", 50, CY - 70, 140, 140, shape = "ring", stroke = 3f, color = DIM),
+                FaceElement("hour", "hand", bind = Binding.HOUR_HAND.key, handStyle = "line", color = WHITE, length = 62, tail = 0, stroke = 9f, pivotX = CX, pivotY = CY, size = 0f),
+                FaceElement("minute", "hand", bind = Binding.MINUTE_HAND.key, handStyle = "line", color = WHITE, length = 96, tail = 0, stroke = 6f, pivotX = CX, pivotY = CY, size = 0f),
+                FaceElement("second", "hand", bind = Binding.SECOND_HAND.key, handStyle = "dot", color = RED, length = 104, stroke = 6f, pivotX = CX, pivotY = CY, size = 0f),
+                FaceElement("cap", "shape", CX - 8, CY - 8, 16, 16, shape = "circle", color = WHITE),
+            ),
+        ),
+    )
+
+    val neonGrid = Preset(
+        "neon-grid", "Neon Grid", "Seven-segment time over red ghost segments on a fine grid.",
+        FaceSpec(
+            name = "Neon Grid",
+            background = Background("#000000", pattern = "grid", patternColor = "#1A1A1A", patternSpacing = 20),
+            elements = listOf(
+                FaceElement("weekday", "sprite", 0, 40, W, bind = Binding.WEEKDAY.key, glyph = "dot-matrix", size = 21f, color = GREY, align = "center"),
+                FaceElement("hour", "number", 0, 100, 112, bind = Binding.HOUR.key, glyph = "segment", ghost = "#2A0B0C", size = 64f, color = RED, align = "right"),
+                FaceElement("minute", "number", 128, 100, 112, bind = Binding.MINUTE.key, glyph = "segment", ghost = "#2A0B0C", size = 64f, color = RED),
+                FaceElement("c1", "shape", CX - 4, 116, 8, 8, shape = "rect", size = 0f, color = RED),
+                FaceElement("c2", "shape", CX - 4, 142, 8, 8, shape = "rect", size = 0f, color = RED),
+                FaceElement("day", "number", 0, 210, W, bind = Binding.DAY.key, glyph = "segment", size = 28f, color = WHITE, align = "center"),
+            ),
+        ),
+    )
+
+    val oneHand = Preset(
+        "one-hand", "One Hand", "A single red hour hand over fine minute marks — read the time to the nearest five minutes.",
+        FaceSpec(
+            name = "One Hand",
+            background = Background("#000000"),
+            elements = ticks(color = WHITE, minutes = "#5A5A5A") + listOf(
+                FaceElement("hour", "hand", bind = Binding.HOUR_HAND.key, handStyle = "needle", color = RED, length = 100, tail = 18, stroke = 12f, pivotX = CX, pivotY = CY, size = 0f),
+                FaceElement("cap", "shape", CX - 8, CY - 8, 16, 16, shape = "circle", color = WHITE),
+            ),
+        ),
+    )
+
+    val dotTime = Preset(
+        "dot-time", "Dot Time", "Only the time, in LED dots, centred. Nothing else.",
+        FaceSpec(
+            name = "Dot Time",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("hour", "number", 0, 108, 112, bind = Binding.HOUR.key, glyph = "dot-matrix", ghost = "#1A1A1A", size = 49f, color = WHITE, align = "right"),
+                FaceElement("minute", "number", 128, 108, bind = Binding.MINUTE.key, glyph = "dot-matrix", ghost = "#1A1A1A", size = 49f, color = WHITE),
+            ) + colon(120, size = 7, gap = 20),
+        ),
+    )
+
+    val split = Preset(
+        "split", "Split", "Half paper, half black, with red hands crossing both.",
+        FaceSpec(
+            name = "Split",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("paper", "shape", 0, 0, CX, 280, shape = "rect", size = 0f, color = "#EDEDED"),
+                FaceElement("t12", "shape", CX - 3, 18, 6, 22, shape = "rect", size = 0f, color = RED),
+                FaceElement("t9", "shape", 14, CY - 3, 22, 6, shape = "rect", size = 0f, color = INK),
+                FaceElement("t3", "shape", 204, CY - 3, 22, 6, shape = "rect", size = 0f, color = WHITE),
+                FaceElement("t6", "shape", CX - 3, 240, 6, 22, shape = "rect", size = 0f, color = RED),
+                FaceElement("day", "number", 150, 196, 60, bind = Binding.DAY.key, font = "space-grotesk", size = 24f, weight = 700, color = WHITE, align = "center"),
+                FaceElement("weekday", "sprite", 30, 196, 60, bind = Binding.WEEKDAY.key, font = "space-mono", size = 14f, weight = 700, color = INK, align = "center"),
+            ) + hands("bar", color = RED, hourWidth = 12f, minuteWidth = 9f, seconds = false, cap = RED),
+        ),
+    )
+
+    val dataHero = Preset(
+        "data-hero", "Data Hero", "Steps as the hero in Doto; the time stays small at the top.",
+        FaceSpec(
+            name = "Data Hero",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("hour", "number", 0, 26, 112, bind = Binding.HOUR.key, font = "space-mono", size = 26f, weight = 700, color = WHITE, align = "right"),
+                FaceElement("minute", "number", 128, 26, bind = Binding.MINUTE.key, font = "space-mono", size = 26f, weight = 700, color = WHITE),
+                FaceElement("c1", "shape", CX - 3, 34, 5, 5, shape = "rect", size = 0f, color = RED),
+                FaceElement("c2", "shape", CX - 3, 46, 5, 5, shape = "rect", size = 0f, color = RED),
+                label("stepsLabel", "STEPS TODAY", 0, 96, W, align = "center"),
+                FaceElement("steps", "number", 0, 114, W, bind = Binding.STEPS.key, font = "doto", size = 56f, weight = 700, color = WHITE, align = "center"),
+                FaceElement("bar", "shape", 30, 196, 180, 10, shape = "segments", count = 20, sweep = 360f, color = DIM),
+                label("kcalLabel", "KCAL", 30, 222, 80, align = "center"),
+                value("kcal", Binding.CALORIES, 30, 240, 80, size = 20f),
+                label("bpmLabel", "BPM", 130, 222, 80, align = "center"),
+                value("hr", Binding.HEART_RATE, 130, 240, 80, RED, 20f),
+            ),
+        ),
+    )
+
     val all = listOf(
         dotMatrix, instrument, paper, subdials, glyphRings, minimal, twoHands, indexDots, cloud, braun, railway, radar, paperCloud,
+        f1Speedo, orbit, oneHand, split,
         dotMatrixDigital, ledMatrix, segment, stack, glyphData, monoLed, cloudDigital, swissGrid, swissDark, bigDate, terminal,
+        f1Telemetry, hud, neonGrid, dotTime, dataHero,
     )
 }

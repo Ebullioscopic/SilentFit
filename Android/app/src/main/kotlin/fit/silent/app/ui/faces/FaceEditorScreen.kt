@@ -184,8 +184,7 @@ private fun Editor(doc: FaceDocument, nav: NavController) {
         }
     }
 
-    var confirmInstall by remember { mutableStateOf(false) }
-    var wearAfterInstall by remember { mutableStateOf(false) }
+    var wearAfterInstall by remember { mutableStateOf(true) }
 
     fun install(freeSpace: Boolean = false): kotlinx.coroutines.Job = scope.launch {
         installing = true
@@ -270,10 +269,12 @@ private fun Editor(doc: FaceDocument, nav: NavController) {
                 status?.let { InlineStatus(it, color = if (it.startsWith("Error")) c.accent else c.textSecondary); Spacer(Modifier.height(Space.sm)) }
                 if (retry) ReplacePrompt(installed.filter { it.canRemove }.map { it.name }, { install(freeSpace = true) }) { retry = false }
                 FaceTrialBanner()
-                if (confirmInstall) InstallConfirm(spec.name, onInstall = { wear -> confirmInstall = false; wearAfterInstall = wear; install() }, onCancel = { confirmInstall = false })
-                NdButton(if (connection.isConnected) "Install on watch" else "Connect watch to install",
-                    { confirmInstall = true }, Modifier.fillMaxWidth(), enabled = connection.isConnected && !installing && !confirmInstall && unconfirmed.isEmpty() && safety?.isEmpty() == true, icon = R.drawable.ic_upload,
-                )
+                val canInstall = connection.isConnected && !installing && unconfirmed.isEmpty() && safety?.isEmpty() == true
+                if (!connection.isConnected) Txt("Connect your watch to install.", Nd.type.caption, Modifier.padding(bottom = Space.sm), c.textDisabled)
+                Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+                    NdButton("Install & wear", { wearAfterInstall = true; install() }, Modifier.weight(1f), enabled = canInstall, icon = R.drawable.ic_upload)
+                    NdButton("Install only", { wearAfterInstall = false; install() }, enabled = canInstall, style = ButtonStyle.SECONDARY)
+                }
             }
         }
     }
