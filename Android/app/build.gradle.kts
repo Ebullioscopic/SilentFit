@@ -1,90 +1,75 @@
-import java.util.Properties
-
 plugins {
-    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.android.application)
-    id("skip-build-plugin")
-}
-
-skip {
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(libs.versions.jvm.get().toString())
-    }
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = group as String
-    compileSdk = libs.versions.android.sdk.compile.get().toInt()
-    compileOptions {
-        sourceCompatibility = JavaVersion.toVersion(libs.versions.jvm.get())
-        targetCompatibility = JavaVersion.toVersion(libs.versions.jvm.get())
-    }
-    packaging {
-        jniLibs {
-            keepDebugSymbols.add("**/*.so")
-            pickFirsts.add("**/*.so")
-            // this option would compress JNI .so files and reduce overall size for Skip Fuse apps, but cost more at install time
-            //useLegacyPackaging = true
-        }
-    }
+    namespace = "fit.silent.app"
+    compileSdk = 36
 
     defaultConfig {
-        minSdk = libs.versions.android.sdk.min.get().toInt()
-        targetSdk = libs.versions.android.sdk.compile.get().toInt()
-        // skip.tools.skip-build-plugin will automatically use Skip.env properties for:
-        // applicationId = ANDROID_APPLICATION_ID ?? PRODUCT_BUNDLE_IDENTIFIER
-        // versionCode = CURRENT_PROJECT_VERSION
-        // versionName = MARKETING_VERSION
-    }
-
-    buildFeatures {
-        buildConfig = true
-    }
-
-    lint {
-        disable.add("Instantiatable")
-        disable.add("MissingPermission")
-    }
-
-    dependenciesInfo {
-        // Disables dependency metadata when building APKs.
-        includeInApk = false
-        // Disables dependency metadata when building Android App Bundles.
-        includeInBundle = false
-    }
-
-    // default signing configuration tries to load from keystore.properties
-    // see: https://skip.dev/docs/deployment/#export-signing
-    signingConfigs {
-        val keystorePropertiesFile = file("keystore.properties")
-        create("release") {
-            if (keystorePropertiesFile.isFile) {
-                val keystoreProperties = Properties()
-                keystoreProperties.load(keystorePropertiesFile.inputStream())
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-                storeFile = file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-            } else {
-                // when there is no keystore.properties file, fall back to signing with debug config
-                keyAlias = signingConfigs.getByName("debug").keyAlias
-                keyPassword = signingConfigs.getByName("debug").keyPassword
-                storeFile = signingConfigs.getByName("debug").storeFile
-                storePassword = signingConfigs.getByName("debug").storePassword
-            }
-        }
+        // Keeps the same identity as the earlier Skip build so updates install in place.
+        applicationId = "com.hariharan.silentfit"
+        minSdk = 29
+        targetSdk = 36
+        versionCode = 2
+        versionName = "0.2.0"
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
-            isDebuggable = false // can be set to true for debugging release build, but needs to be false when uploading to store
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    packaging {
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+    }
+
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        optIn.add("androidx.compose.foundation.layout.ExperimentalLayoutApi")
+    }
+}
+
+dependencies {
+    implementation(project(":core"))
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.process)
+    implementation(libs.androidx.lifecycle.service)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.glance)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.ui.tooling.preview)
+    debugImplementation(libs.compose.ui.tooling)
+    testImplementation(libs.junit)
 }

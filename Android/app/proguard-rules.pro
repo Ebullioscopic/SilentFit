@@ -1,11 +1,7 @@
--keeppackagenames **
--keep class skip.** { *; }
--keep class tools.skip.** { *; }
--keep class kotlin.jvm.functions.** {*;}
--keep interface kotlinx.coroutines.Job { void cancel(java.util.concurrent.CancellationException); }
--keep class com.sun.jna.** { *; }
--dontwarn java.awt.**
--keep class * implements com.sun.jna.** { *; }
--keep class * implements skip.bridge.** { *; }
--keep class **._ModuleBundleAccessor_* { *; }
--keep class silent.fit.** { *; }
+# kotlinx.serialization keeps generated serializers through its consumer rules.
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.**
+
+# Notification listener and widget receivers are instantiated by the system.
+-keep class fit.silent.app.phone.NotificationRelay { *; }
+-keep class fit.silent.app.widget.** extends android.appwidget.AppWidgetProvider { *; }

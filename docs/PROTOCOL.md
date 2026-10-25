@@ -218,10 +218,36 @@ Times are `SESettingTime{1 hour, 2 minute}`.
 | List | `14/0` → `watch_face_list(1){list(1){1 id, 2 name, 3 is current, 4 can remove, …}}` |
 | Select | `14/1` `{id(2)}` |
 | Remove | `14/2` `{id(2)}` |
+| Prepare install | `14/4` `{prepare_info(6){1 id, 2 size, 3 background size, 7 style}}` → watch `14/4` `{prepare_reply(9){1 id, 2 status, 3 compress, 4 expected slice, 6 corner radius}}` |
+| Install result | watch → `14/5` `{install_result(7){1 id, 2 code}}` — code 2 = success |
 | Watch changed face | watch → `14/13` |
 
-Uploading new faces uses the big-file upload path (`BerryLargeFileManager`) and an
-image/`.bin` format; it is documented in the roadmap but not implemented yet.
+Prepare status: 0 ready, 1 busy, 2 already installed, 3 low storage, 4 low battery,
+5 newer version present, 6 low storage (ask the user to delete). The NF 2 keeps **one**
+downloadable face; status 3 means the old one must be removed first.
+
+After a ready reply the face file is sent as a large-file upload (frame type 5): a
+12-byte prefix `u32 length, u32 type, u32 0` followed by the file. The first slice
+travels in an event-2 `66 66` frame; later slices are raw. Slices are the smallest
+multiple of 990 bytes at or above the watch's expected slice length, and the watch ACKs
+about every 4096 bytes. The file format is in [WATCHFACE_FORMAT.md](WATCHFACE_FORMAT.md).
+
+### 5.1 Command safety policy
+
+The NF 2 firmware trusts what it receives. An unverified watch-face record put it into a
+boot loop (`00005212`), and a later session with unverified fields ended in a crash
+(`00001002`) that needed a factory reset. SilentFit therefore classifies every command
+(`CommandPolicy` in `core/…/protocol/Commands.kt`):
+
+| Tier | Commands | Sent |
+|------|----------|------|
+| **Proven** | hello, user id, bind; device info `2/0`, battery `2/1`; time `3/0`; find watch `8/1`; live data `8/4`; notifications `9/2`, `9/3`, call state `9/4`, quick-reply list `9/5`; now playing `10/3`; fitness sync `11/136`, `11/138`, `11/139`; settings **GETs**; face list/select/remove/prepare `14/0,1,2,4` | Always |
+| **Experimental** | every settings SET, profile/units/temperature/language `4/x`, launcher `8/6–12`, find-phone stop `8/10`, quick-reply SET `9/6`, face support data `14/10`, face edit `14/11` | Only after the user enables *Experimental watch controls* |
+
+"Proven" means the frame was captured from NoiseFit talking to this watch on firmware
+1.0.39, including a fresh pairing after a factory reset, or it is a read-only request
+that earlier SilentFit builds sent many times without issue. Unit tests check the proven
+commands byte for byte against the NoiseFit captures (`SafetyTest`).
 
 ---
 
