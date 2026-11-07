@@ -15,8 +15,8 @@ android {
         applicationId = "com.hariharan.silentfit"
         minSdk = 29
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 5
+        versionName = "0.3.2"
     }
 
     // Release signing reads app/keystore.properties (gitignored). Without it, release builds fall back to the debug key.

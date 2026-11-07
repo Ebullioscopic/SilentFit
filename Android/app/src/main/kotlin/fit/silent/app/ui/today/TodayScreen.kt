@@ -211,7 +211,8 @@ fun TodayScreen(nav: NavController) {
                 } else {
                     Card(onClick = { nav.navigate(Routes.trend("sleep")) }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Gauge(lastSleep.score / 100f, size = 96.dp) {
+                            // 112 dp leaves the inner ring wide enough for the score and its label.
+                            Gauge(lastSleep.score / 100f, size = 112.dp) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Txt("${lastSleep.score}", Nd.type.dataMd, color = c.textDisplay)
                                     Label("Score")
