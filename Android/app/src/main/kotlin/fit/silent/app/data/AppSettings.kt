@@ -29,6 +29,10 @@ data class AppSettings(
     val todayLayout: TodayLayout = TodayLayout.DIALS,
     /** Sends commands whose field layout was not observed from the official app (core CommandPolicy). Off by default. */
     val experimentalWatchControls: Boolean = false,
+    /** Writes alarms, monitoring, reminders, DND and raise-to-wake by editing the watch's own reply (CommandPolicy.ECHOED). */
+    val editWatchSettings: Boolean = true,
+    /** Mirror alarms saved to the watch in the phone's clock app. */
+    val mirrorAlarmsToPhone: Boolean = false,
     /** A face that was just made current; reverted automatically if the watch drops the link soon after. */
     val faceTrial: FaceTrial? = null,
     val lastSync: Long = 0,

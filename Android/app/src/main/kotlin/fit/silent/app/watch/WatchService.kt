@@ -42,6 +42,9 @@ class WatchService : LifecycleService() {
                 BluetoothDevice.ACTION_ACL_CONNECTED -> IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)?.let {
                     graph.session.onWatchNearby(it.address)
                 }
+                BluetoothDevice.ACTION_ACL_DISCONNECTED -> IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)?.let {
+                    graph.session.onWatchLinkLost(it.address)
+                }
             }
         }
     }
@@ -52,7 +55,9 @@ class WatchService : LifecycleService() {
         startInForeground(notification("Connecting", null))
         ContextCompat.registerReceiver(
             this, bluetoothReceiver,
-            IntentFilter().apply { addAction(BluetoothAdapter.ACTION_STATE_CHANGED); addAction(BluetoothDevice.ACTION_ACL_CONNECTED) },
+            IntentFilter().apply {
+                addAction(BluetoothAdapter.ACTION_STATE_CHANGED); addAction(BluetoothDevice.ACTION_ACL_CONNECTED); addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+            },
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
         lifecycleScope.launch {

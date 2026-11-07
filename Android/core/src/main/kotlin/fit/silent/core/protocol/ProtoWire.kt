@@ -43,6 +43,57 @@ class ProtoWriter {
 
     /** Writes each value as its own field (unpacked repeated varint). */
     fun uints(field: Int, values: List<Int>): ProtoWriter { values.forEach { uint(field, it) }; return this }
+
+    /** Copies a decoded field unchanged. */
+    fun raw(f: ProtoField): ProtoWriter {
+        key(f.number, f.wireType)
+        when (f.wireType) {
+            0 -> varint(f.varint)
+            2 -> { varint(f.data.size.toLong()); sink.bytes(f.data) }
+            5 -> sink.u32(f.varint and 0xFFFFFFFFL)
+            1 -> { sink.u32(f.varint and 0xFFFFFFFFL); sink.u32(f.varint ushr 32) }
+        }
+        return this
+    }
+}
+
+/**
+ * Edits a message the watch sent, keeping every field it reported and replacing only the ones set here.
+ * Output is in field-number order, which is how the vendor SDK's generated code serialises.
+ */
+class ProtoEdit(private val base: ProtoMessage?) {
+    private val replaced = HashMap<Int, List<ProtoField>>()
+
+    fun uint(n: Int, v: Int) = put(n, ProtoField(n, 0, v.toLong() and 0xFFFFFFFFL, EMPTY))
+    fun bool(n: Int, v: Boolean) = uint(n, if (v) 1 else 0)
+    fun string(n: Int, v: String) = put(n, ProtoField(n, 2, 0, v.toByteArray(Charsets.UTF_8)))
+    fun message(n: Int, bytes: ByteArray) = put(n, ProtoField(n, 2, 0, bytes))
+    fun messages(n: Int, items: List<ByteArray>): ProtoEdit { replaced[n] = items.map { ProtoField(n, 2, 0, it) }; return this }
+    fun remove(n: Int): ProtoEdit { replaced[n] = emptyList(); return this }
+
+    /** Edits the nested message [n] the same way. */
+    fun edit(n: Int, block: ProtoEdit.(fresh: Boolean) -> Unit): ProtoEdit {
+        val nested = base?.message(n)
+        return message(n, ProtoEdit(nested).apply { block(nested == null) }.bytes)
+    }
+
+    /** SESettingTime{1 hour, 2 minuter}; new times carry second and millisecond 0 like the SDK writes them. */
+    fun time(n: Int, minutes: Int) = edit(n) { fresh ->
+        uint(1, (minutes / 60) % 24); uint(2, minutes % 60)
+        if (fresh) { uint(3, 0); uint(4, 0) }
+    }
+
+    private fun put(n: Int, f: ProtoField): ProtoEdit { replaced[n] = listOf(f); return this }
+
+    val bytes: ByteArray get() {
+        val original = base?.fields.orEmpty()
+        val numbers = (original.map { it.number } + replaced.keys).distinct().sorted()
+        val w = ProtoWriter()
+        for (n in numbers) (replaced[n] ?: original.filter { it.number == n }).forEach { w.raw(it) }
+        return w.bytes
+    }
+
+    private companion object { val EMPTY = ByteArray(0) }
 }
 
 class ProtoField(val number: Int, val wireType: Int, val varint: Long, val data: ByteArray)

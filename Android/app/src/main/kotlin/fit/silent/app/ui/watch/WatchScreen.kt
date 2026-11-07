@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,27 @@ import fit.silent.app.watch.LinkPhase
 import fit.silent.core.model.ChargeState
 import androidx.compose.ui.platform.LocalContext
 
+/** Another companion app (NoiseFit) keeps taking the watch's only data channel. */
+@Composable
+fun ConflictCard() {
+    val graph = LocalGraph.current
+    val noiseFit = remember { graph.phone.noiseFitInstalled }
+    fit.silent.app.ui.components.Card(Modifier.fillMaxWidth().padding(top = Space.lg)) {
+        Txt(if (noiseFit) "NoiseFit is connected to your watch" else "Another app is connected to your watch", Nd.type.subheading)
+        Spacer(Modifier.height(Space.sm))
+        Txt(
+            "Your watch has one data connection, and the other app keeps taking it, so both apps drop every few seconds. " +
+                if (noiseFit) "Force stop NoiseFit (or disable it) while you use SilentFit, then tap Try again." else "Close the other app, then tap Try again.",
+            Nd.type.bodySm, color = Nd.colors.textSecondary,
+        )
+        Spacer(Modifier.height(Space.md))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
+            if (noiseFit) NdButton("Open NoiseFit settings", { graph.phone.openNoiseFitSettings() }, style = ButtonStyle.SECONDARY)
+            NdButton("Try again", { graph.session.retryAfterConflict() })
+        }
+    }
+}
+
 @Composable
 fun WatchScreen(nav: NavController) {
     val graph = LocalGraph.current
@@ -51,6 +73,7 @@ fun WatchScreen(nav: NavController) {
     val watch by graph.session.watch.collectAsStateWithLifecycle()
     val battery by graph.session.battery.collectAsStateWithLifecycle()
     val ws by graph.session.watchSettings.collectAsStateWithLifecycle()
+    val conflict by graph.session.conflict.collectAsStateWithLifecycle()
     val c = Nd.colors
 
     Page {
@@ -88,6 +111,7 @@ fun WatchScreen(nav: NavController) {
                 }
             }
         }
+        if (conflict) item { ConflictCard() }
         item {
             FlowRow(Modifier.fillMaxWidth().padding(top = Space.lg), horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
                 if (connection.isConnected) {

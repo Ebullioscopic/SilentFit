@@ -1,5 +1,6 @@
 package fit.silent.core.protocol
 
+import fit.silent.core.fitness.SportIds
 import fit.silent.core.model.AlwaysOnSettings
 import fit.silent.core.model.FitnessRecordId
 import fit.silent.core.model.HeartRateSettings
@@ -102,13 +103,24 @@ object PrivateId { const val HELLO = 1; const val USER_ID = 2; const val BIND_RE
 /** Large-file categories (frame type byte for event 2, SELog_File_TYPE_ID). */
 object FileType { const val OTA = 4; const val WATCH_FACE = 5; const val SPORT = 7; const val ALBUM_BACKGROUND = 14; const val DAILY = 15 }
 
-/** [wearType] is -1 for private (connection) commands; [id] is the wear id or private command id. */
-class BerryCommand(val event: Int, val type: Int, val payload: ByteArray, val label: String, val wearType: Int = -1, val id: Int = -1) {
+/**
+ * [wearType] is -1 for private (connection) commands; [id] is the wear id or private command id.
+ * [echoed]: a settings write built by editing the watch's own reply to the matching GET.
+ */
+class BerryCommand(
+    val event: Int, val type: Int, val payload: ByteArray, val label: String, val wearType: Int = -1, val id: Int = -1,
+    val echoed: Boolean = false,
+) {
     companion object {
         fun wear(wearType: Int, id: Int, field: Int = 0, body: ProtoWriter? = null, label: String): BerryCommand {
             val w = ProtoWriter().uint(WearField.TYPE, wearType).uint(WearField.ID, id)
             if (body != null) w.message(field, body)
             return BerryCommand(BerryFrame.EVENT_PROTOBUF, BerryFrame.TYPE_PROTOBUF, w.bytes, label, wearType, id)
+        }
+
+        fun wear(wearType: Int, id: Int, field: Int, body: ByteArray, label: String, echoed: Boolean): BerryCommand {
+            val w = ProtoWriter().uint(WearField.TYPE, wearType).uint(WearField.ID, id).bytes(field, body)
+            return BerryCommand(BerryFrame.EVENT_PROTOBUF, BerryFrame.TYPE_PROTOBUF, w.bytes, label, wearType, id, echoed)
         }
 
         fun private(cmdId: Int, data: ByteArray = ByteArray(0), label: String) =
@@ -126,7 +138,8 @@ class BerryCommand(val event: Int, val type: Int, val payload: ByteArray, val la
  * [EXPERIMENTAL] and only sent when the user explicitly enables experimental watch controls.
  */
 object CommandPolicy {
-    enum class Tier { PROVEN, EXPERIMENTAL }
+    /** [ECHOED]: settings writes rebuilt from the watch's own reply (allowed unless the user turns them off). */
+    enum class Tier { PROVEN, ECHOED, EXPERIMENTAL }
 
     private val PROVEN_PRIVATE = setOf(PrivateId.HELLO, PrivateId.USER_ID, PrivateId.BIND_REQUEST, PrivateId.BIND_CONFIRM)
 
@@ -155,8 +168,18 @@ object CommandPolicy {
             BerryFrame.EVENT_PROTOBUF -> PROVEN_WEAR[c.wearType]?.contains(c.id) == true
             else -> false
         }
-        return if (proven) Tier.PROVEN else Tier.EXPERIMENTAL
+        return when {
+            proven -> Tier.PROVEN
+            c.echoed && c.wearType == WearType.SETTING_MENU && c.id in ECHO_SETS -> Tier.ECHOED
+            else -> Tier.EXPERIMENTAL
+        }
     }
+
+    /** Settings whose writes are rebuilt from the watch's reply: monitoring, reminders, alarms, DND, raise-to-wake. */
+    private val ECHO_SETS = listOf(
+        MenuId.HEART_RATE, MenuId.SPO2, MenuId.STRESS, MenuId.DND, MenuId.WRIST, MenuId.ALARMS,
+        MenuId.SEDENTARY, MenuId.DRINK, MenuId.MEDICATION, MenuId.MEALS, MenuId.WASH,
+    ).map { MenuId.set(it) }.toSet()
 
     fun isProven(c: BerryCommand) = tier(c) == Tier.PROVEN
 }
@@ -223,9 +246,13 @@ object Commands {
 
     // -------------------------------------------------------------- notifications
 
-    fun appNotification(appName: String, packageName: String, title: String, text: String, key: String): BerryCommand {
-        val n = ProtoWriter().string(1, appName.take(40)).string(2, packageName).string(3, title.take(80))
-            .string(4, text.take(400)).string(5, title.take(80)).string(6, key)
+    /**
+     * Same fields NoiseFit sends: [appTag]/[pageName] from [WatchApps] pick the icon, ticker is the literal "t" and
+     * support_open is set (capture in SafetyTest).
+     */
+    fun appNotification(appTag: String, pageName: String, title: String, text: String, key: String): BerryCommand {
+        val n = ProtoWriter().string(1, appTag).string(2, pageName).string(3, title.take(80))
+            .string(4, text.replace("\uD83C\uDFA5", "").take(400)).string(5, "t").string(6, key).bool(7, true)
         return BerryCommand.wear(WearType.NOTIFICATION, NotificationId.APP, WearField.NOTIFICATION, ProtoWriter().message(2, n), "appNotification")
     }
 
@@ -249,11 +276,10 @@ object Commands {
 
     // -------------------------------------------------------------- music
 
+    /** Same fields NoiseFit sends (captures in SafetyTest): no player/artist, progress always 0, new permission type. */
     fun musicInfo(info: NowPlaying): BerryCommand {
         val p = ProtoWriter().uint(1, info.state.wire).string(2, info.title.take(60))
-        if (info.player.isNotEmpty()) p.string(3, info.player)
-        if (info.artist.isNotEmpty()) p.string(4, info.artist.take(60))
-        p.uint(5, info.volume).uint(6, info.maxVolume).uint(7, info.durationSeconds).uint(8, info.positionSeconds).uint(10, 1)
+            .uint(5, info.volume).uint(6, info.maxVolume).uint(7, 0).uint(8, 0).uint(10, 1)
         return BerryCommand.wear(WearType.MUSIC, MusicId.INFO, WearField.MUSIC, ProtoWriter().message(1, p), "musicInfo")
     }
 
@@ -274,6 +300,19 @@ object Commands {
         return menu(MenuId.DELETE_FITNESS, MenuField.DELETE_FITNESS, ProtoWriter().uint(1, fileType).message(2, list), "deleteFitnessIds")
     }
 
+    /** Workouts: SELogFileAppContorSendStatus{1 type 7, 2 START, 3 total length, 5 sport ids} as the SDK builds it. */
+    fun requestSportFile(ids: SportIds): BerryCommand {
+        val status = ProtoWriter().uint(1, FileType.SPORT).uint(2, 1).uint(3, ids.lengths.take(ids.count).sum()).bytes(5, ids.ids.copyOf(ids.count * 7))
+        return menu(MenuId.FILE_SEND_STATUS, MenuField.FILE_SEND_STATUS, status, "requestSportFile")
+    }
+
+    /** SEBigFileFitnessControlDelIdList{1 type 7, 3 {1 ids, 2 {1 lengths}}}. */
+    fun deleteSportIds(ids: SportIds): BerryCommand {
+        val lens = ProtoWriter().uints(1, ids.lengths.take(ids.count))
+        val list = ProtoWriter().bytes(1, ids.ids.copyOf(ids.count * 7)).message(2, lens)
+        return menu(MenuId.DELETE_FITNESS, MenuField.DELETE_FITNESS, ProtoWriter().uint(1, FileType.SPORT).message(3, list), "deleteSportIds")
+    }
+
     // -------------------------------------------------------------- settings
 
     fun get(menuId: Int) = BerryCommand.wear(WearType.SETTING_MENU, menuId, label = "get-$menuId")
@@ -285,35 +324,44 @@ object Commands {
 
     private fun time(minutes: Int) = ProtoWriter().uint(1, (minutes / 60) % 24).uint(2, minutes % 60)
 
-    fun setHeartRate(s: HeartRateSettings): BerryCommand {
-        val m = ProtoWriter().uint(1, if (s.enabled) 0 else 1).uint(2, s.intervalMinutes).bool(3, s.highAlertEnabled).uint(4, s.highAlertBpm)
-        m.uint(7, if (s.smartMode) 1 else 0)
-        if (s.lowAlertBpm > 0) m.uint(8, s.lowAlertBpm)
-        return setMenu(MenuId.HEART_RATE, MenuField.HEART_RATE, m, "setHeartRate")
+    // Settings below are written by editing the watch's own GET reply ([base]): every field it reported is sent back
+    // unchanged and only the user's change differs, so the payload has the exact shape the firmware produced.
+
+    private fun echo(getId: Int, field: Int, base: ProtoMessage?, label: String, edit: ProtoEdit.() -> Unit) =
+        BerryCommand.wear(
+            WearType.SETTING_MENU, MenuId.set(getId), WearField.SETTING_MENU,
+            ProtoWriter().bytes(field, ProtoEdit(base).apply(edit).bytes).bytes, label, echoed = base != null,
+        )
+
+    /** SEHeartRateMonitor: 1 mode (0 auto, 1 off), 2 interval, 3 high alert, 4 high bpm, 7 smart, 8 low bpm; 5/6 kept. */
+    fun setHeartRate(s: HeartRateSettings, base: ProtoMessage? = null) = echo(MenuId.HEART_RATE, MenuField.HEART_RATE, base, "setHeartRate") {
+        uint(1, if (s.enabled) 0 else 1); uint(2, s.intervalMinutes); bool(3, s.highAlertEnabled); uint(4, s.highAlertBpm)
+        if (base == null) { bool(5, false); uint(6, 0) }
+        uint(7, if (s.smartMode) 1 else 0); uint(8, s.lowAlertBpm)
     }
 
-    fun setSpO2(s: SpO2Settings) =
-        setMenu(MenuId.SPO2, MenuField.SPO2, ProtoWriter().uint(1, if (s.enabled) 0 else 1).uint(2, s.intervalMinutes), "setSpO2")
+    fun setSpO2(s: SpO2Settings, base: ProtoMessage? = null) = echo(MenuId.SPO2, MenuField.SPO2, base, "setSpO2") {
+        uint(1, if (s.enabled) 0 else 1); uint(2, s.intervalMinutes)
+    }
 
-    fun setStress(s: StressSettings) =
-        setMenu(MenuId.STRESS, MenuField.STRESS, ProtoWriter().bool(1, s.enabled).bool(2, s.relaxReminder), "setStress")
+    fun setStress(s: StressSettings, base: ProtoMessage? = null) = echo(MenuId.STRESS, MenuField.STRESS, base, "setStress") {
+        bool(1, s.enabled); bool(2, s.relaxReminder)
+    }
 
-    fun setDoNotDisturb(s: ScheduleSettings) = setMenu(
-        MenuId.DND, MenuField.DND,
-        ProtoWriter().bool(1, s.enabled).message(2, time(s.startMinutes)).message(3, time(s.endMinutes)).bool(4, s.smart), "setDND",
-    )
+    fun setDoNotDisturb(s: ScheduleSettings, base: ProtoMessage? = null) = echo(MenuId.DND, MenuField.DND, base, "setDND") {
+        bool(1, s.enabled); time(2, s.startMinutes); time(3, s.endMinutes); bool(4, s.smart)
+    }
 
-    fun setRaiseToWake(s: RaiseToWakeSettings) = setMenu(
-        MenuId.WRIST, MenuField.WRIST,
-        ProtoWriter().uint(1, s.mode.ordinal).message(2, time(s.startMinutes)).message(3, time(s.endMinutes)).uint(4, s.sensitivity.ordinal),
-        "setRaiseToWake",
-    )
+    fun setRaiseToWake(s: RaiseToWakeSettings, base: ProtoMessage? = null) = echo(MenuId.WRIST, MenuField.WRIST, base, "setRaiseToWake") {
+        uint(1, s.mode.ordinal); time(2, s.startMinutes); time(3, s.endMinutes); uint(4, s.sensitivity.ordinal)
+    }
 
-    fun setReminder(kind: ReminderKind, s: ReminderSettings): BerryCommand {
+    fun setReminder(kind: ReminderKind, s: ReminderSettings, base: ProtoMessage? = null): BerryCommand {
         val (id, field) = reminderIds(kind)
-        val m = ProtoWriter().bool(1, s.enabled).message(2, time(s.startMinutes)).message(3, time(s.endMinutes)).uint(4, s.intervalMinutes)
-        if (kind != ReminderKind.MEDICATION && kind != ReminderKind.MEALS) m.bool(5, s.skipLunch)
-        return setMenu(id, field, m, "set-$kind")
+        return echo(id, field, base, "set-$kind") {
+            bool(1, s.enabled); time(2, s.startMinutes); time(3, s.endMinutes); uint(4, s.intervalMinutes)
+            if (kind != ReminderKind.MEDICATION && kind != ReminderKind.MEALS) bool(5, s.skipLunch)
+        }
     }
 
     fun reminderIds(kind: ReminderKind) = when (kind) {
@@ -324,13 +372,22 @@ object Commands {
         ReminderKind.WASH_HANDS -> MenuId.WASH to MenuField.WASH
     }
 
-    fun setAlarms(alarms: List<WatchAlarm>): BerryCommand {
-        val list = ProtoWriter()
-        alarms.forEachIndexed { i, a ->
-            val data = ProtoWriter().message(1, time(a.minutes)).uint(2, a.weekdayMask).bool(3, a.enabled).string(4, a.label.take(20)).uint(5, 0)
-            list.message(1, ProtoWriter().uint(1, i).message(2, data))
+    /**
+     * SEClockInfo.SEList{1 repeated {1 id, 2 data{1 time, 2 weekdays (bit 0 = Monday), 3 enable, 4 name, 5 label}}}.
+     * Existing alarms are edited from the watch's entries (matched by id); new ones are written like the SDK writes
+     * them (no label). The list's max-count field is reply-only and is not sent back.
+     */
+    fun setAlarms(alarms: List<WatchAlarm>, base: ProtoMessage? = null): BerryCommand {
+        val existing = base?.messages(1).orEmpty().associateBy { it.int(1) ?: -1 }
+        val items = alarms.map { a ->
+            ProtoEdit(existing[a.index]).uint(1, a.index).edit(2) {
+                time(1, a.minutes); uint(2, a.weekdayMask); bool(3, a.enabled); string(4, a.label.take(20))
+            }.bytes
         }
-        return setMenu(MenuId.ALARMS, MenuField.ALARMS, list, "setAlarms")
+        return BerryCommand.wear(
+            WearType.SETTING_MENU, MenuId.set(MenuId.ALARMS), WearField.SETTING_MENU,
+            ProtoWriter().bytes(MenuField.ALARMS, ProtoEdit(null).messages(1, items).bytes).bytes, "setAlarms", echoed = base != null,
+        )
     }
 
     /** SEVibrationIntensityMode is a bare enum in the oneof. */

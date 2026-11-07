@@ -63,15 +63,21 @@ import fit.silent.core.model.WatchAlarm
 @Composable
 private fun Unsupported(what: String) = Txt("$what is not available on this watch.", Nd.type.bodySm, Modifier.padding(vertical = Space.md), Nd.colors.textDisabled)
 
-/** Watch-setting writes are reconstructed, not observed from the official app, so they stay off unless opted in. */
+/**
+ * [echoed] screens (monitoring, reminders, alarms) are written by editing the watch's own reply and are on by default;
+ * the rest are reconstructed and stay off unless the user opts in.
+ */
 @Composable
-fun ExperimentalNotice() {
+fun ExperimentalNotice(echoed: Boolean = false, partial: Boolean = false) {
     val settings by LocalGraph.current.settings.flow.collectAsStateWithLifecycle()
     if (settings.experimentalWatchControls) return
-    InlineStatus(
-        "View only. Changing these from SilentFit is experimental and off for your watch's safety — use NoiseFit, or turn on Settings › Experimental watch controls.",
-        Modifier.padding(bottom = Space.md), Nd.colors.warning,
-    )
+    if (echoed && settings.editWatchSettings) return
+    val text = when {
+        echoed -> "View only. Turn on Settings › Edit watch settings to change these from SilentFit."
+        partial && settings.editWatchSettings -> "Raise to wake and Do not disturb can be changed. The other display settings are experimental and stay view only unless you turn on Settings › Experimental watch controls."
+        else -> "View only. Changing these from SilentFit is experimental and off for your watch's safety — use NoiseFit, or turn on Settings › Experimental watch controls."
+    }
+    InlineStatus(text, Modifier.padding(bottom = Space.md), Nd.colors.warning)
 }
 
 @Composable
@@ -80,7 +86,7 @@ fun HealthMonitoringScreen(nav: NavController) {
     val ws by session.watchSettings.collectAsStateWithLifecycle()
     Page {
         item { BackHeader("Monitoring", { nav.popBackStack() }) }
-        item { ExperimentalNotice() }
+        item { ExperimentalNotice(echoed = true) }
         item {
             Section("Heart rate") {
                 val hr = ws.heartRate ?: return@Section Unsupported("Heart-rate monitoring")
@@ -127,7 +133,7 @@ fun DisplayScreen(nav: NavController) {
     val ws by session.watchSettings.collectAsStateWithLifecycle()
     Page {
         item { BackHeader("Display & wake", { nav.popBackStack() }) }
-        item { ExperimentalNotice() }
+        item { ExperimentalNotice(partial = true) }
         item {
             Section("Screen") {
                 val s = ws.screen
@@ -199,7 +205,7 @@ fun RemindersScreen(nav: NavController) {
     val ws by session.watchSettings.collectAsStateWithLifecycle()
     Page {
         item { BackHeader("Reminders", { nav.popBackStack() }) }
-        item { ExperimentalNotice() }
+        item { ExperimentalNotice(echoed = true) }
         ReminderKind.entries.forEach { kind ->
             item(kind.name) {
                 Section(kind.label) {
@@ -223,21 +229,33 @@ private fun ReminderEditor(r: ReminderSettings, onChange: (ReminderSettings) -> 
 
 @Composable
 fun AlarmsScreen(nav: NavController) {
-    val session = LocalGraph.current.session
+    val graph = LocalGraph.current
+    val session = graph.session
     val ws by session.watchSettings.collectAsStateWithLifecycle()
+    val settings by graph.settings.flow.collectAsStateWithLifecycle()
+    var phoneStatus by remember { mutableStateOf<String?>(null) }
     val alarms = ws.alarms
     var editing by remember { mutableStateOf<Int?>(null) }
     Page {
         item {
             BackHeader("Alarms", { nav.popBackStack() }) {
                 if (alarms != null && alarms.size < ws.maxAlarms) CircleButton(R.drawable.ic_plus, "Add alarm", {
-                    session.setAlarms(alarms + WatchAlarm(index = alarms.size))
+                    // Alarm ids are the watch's; a new alarm takes the lowest free one.
+                    val id = generateSequence(0) { it + 1 }.first { n -> alarms.none { it.index == n } }
+                    session.setAlarms(alarms + WatchAlarm(index = id))
                     editing = alarms.size
                 })
             }
         }
         if (alarms == null) { item { Unsupported("Alarms") }; return@Page }
-        item { ExperimentalNotice() }
+        item { ExperimentalNotice(echoed = true) }
+        item {
+            SwitchRow(
+                "Also set on this phone", settings.mirrorAlarmsToPhone, { on -> graph.settings.update { it.copy(mirrorAlarmsToPhone = on) } },
+                subtitle = "Saving an alarm adds it to your phone's Clock app too",
+            )
+            phoneStatus?.let { InlineStatus(it, Modifier.padding(bottom = Space.sm), Nd.colors.warning) }
+        }
         if (alarms.isEmpty()) item { EmptyState("No alarms", "Silent vibrating alarms wake you without waking anyone else.") }
         alarms.forEachIndexed { i, a ->
             item("alarm$i") {
@@ -256,8 +274,13 @@ fun AlarmsScreen(nav: NavController) {
                                 .padding(Space.sm),
                         ) { fit.silent.app.ui.components.NdSwitch(a.enabled) }
                     }
-                    if (editing == i) AlarmEditor(a, { updated -> session.setAlarms(alarms.mapIndexed { j, x -> if (j == i) updated else x }) }, {
-                        session.setAlarms(alarms.filterIndexed { j, _ -> j != i }.mapIndexed { j, x -> x.copy(index = j) })
+                    if (editing == i) AlarmEditor(a, { updated, saved ->
+                        session.setAlarms(alarms.mapIndexed { j, x -> if (j == i) updated else x })
+                        if (saved && settings.mirrorAlarmsToPhone && updated.enabled) {
+                            if (!graph.phone.setPhoneAlarm(updated.minutes, updated.weekdayMask, updated.label)) phoneStatus = "Could not reach the phone's Clock app"
+                        }
+                    }, {
+                        session.setAlarms(alarms.filterIndexed { j, _ -> j != i })
                         editing = null
                     })
                     Divider()
@@ -268,19 +291,19 @@ fun AlarmsScreen(nav: NavController) {
 }
 
 @Composable
-private fun AlarmEditor(a: WatchAlarm, onChange: (WatchAlarm) -> Unit, onDelete: () -> Unit) {
+private fun AlarmEditor(a: WatchAlarm, onChange: (WatchAlarm, saved: Boolean) -> Unit, onDelete: () -> Unit) {
     var label by remember(a) { mutableStateOf(a.label) }
     Column(Modifier.padding(bottom = Space.md)) {
-        TimeRow("Time", a.minutes, { onChange(a.copy(minutes = it)) })
+        TimeRow("Time", a.minutes, { onChange(a.copy(minutes = it), false) })
         Spacer(Modifier.height(Space.md))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
             listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su").forEachIndexed { d, name ->
-                Chip(name, a.weekdayMask and (1 shl d) != 0, { onChange(a.copy(weekdayMask = a.weekdayMask xor (1 shl d))) })
+                Chip(name, a.weekdayMask and (1 shl d) != 0, { onChange(a.copy(weekdayMask = a.weekdayMask xor (1 shl d)), false) })
             }
         }
         TextInput(label, { label = it.take(20) }, "Label")
         Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
-            NdButton("Save", { onChange(a.copy(label = label.ifBlank { "Alarm" })) }, style = ButtonStyle.SECONDARY)
+            NdButton("Save", { onChange(a.copy(label = label.ifBlank { "Alarm" }), true) }, style = ButtonStyle.SECONDARY)
             NdButton("Delete", onDelete, style = ButtonStyle.DESTRUCTIVE)
         }
     }

@@ -1,5 +1,6 @@
 package fit.silent.app.data
 
+import fit.silent.core.fitness.Workout
 import fit.silent.core.model.HealthDay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
@@ -8,7 +9,7 @@ import java.io.File
 import java.time.LocalDate
 
 @Serializable
-data class HealthArchive(val days: Map<String, HealthDay> = emptyMap())
+data class HealthArchive(val days: Map<String, HealthDay> = emptyMap(), val workouts: Map<String, Workout> = emptyMap())
 
 /** Day-keyed health history merged from watch syncs; kept for [RETENTION_DAYS]. */
 class HealthRepository(dir: File, scope: CoroutineScope) {
@@ -19,8 +20,10 @@ class HealthRepository(dir: File, scope: CoroutineScope) {
 
     fun merge(updated: Map<String, HealthDay>) = store.update { current ->
         val cutoff = key(LocalDate.now().minusDays(RETENTION_DAYS))
-        HealthArchive((current.days + updated).filterKeys { it >= cutoff }.toSortedMap())
+        current.copy(days = (current.days + updated).filterKeys { it >= cutoff }.toSortedMap())
     }
+
+    fun addWorkouts(list: List<Workout>) = store.update { current -> current.copy(workouts = current.workouts + list.associateBy { it.key }) }
 
     fun clear() = store.set(HealthArchive())
 

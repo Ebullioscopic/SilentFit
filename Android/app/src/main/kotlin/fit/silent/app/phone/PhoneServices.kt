@@ -81,10 +81,30 @@ class PhoneServices(private val context: Context) {
     fun openAppSettings() = start(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.fromParts("package", context.packageName, null)))
     fun openBluetoothSettings() = start(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
 
+    /** NoiseFit holds the same single data channel to the watch; both apps cannot be connected at once. */
+    val noiseFitInstalled: Boolean get() = runCatching { context.packageManager.getApplicationInfo(NOISEFIT, 0).enabled }.getOrDefault(false)
+
+    /** NoiseFit's App info page, where it can be force-stopped or disabled. */
+    fun openNoiseFitSettings() = start(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.fromParts("package", NOISEFIT, null)))
+
+    /** Adds the alarm to the phone's clock app as well ([days]: bit 0 = Monday … bit 6 = Sunday; 0 = once). */
+    fun setPhoneAlarm(minutes: Int, days: Int, label: String): Boolean {
+        val calendarDays = ArrayList<Int>()
+        val map = intArrayOf(java.util.Calendar.MONDAY, java.util.Calendar.TUESDAY, java.util.Calendar.WEDNESDAY, java.util.Calendar.THURSDAY, java.util.Calendar.FRIDAY, java.util.Calendar.SATURDAY, java.util.Calendar.SUNDAY)
+        for (i in 0 until 7) if (days shr i and 1 == 1) calendarDays += map[i]
+        val intent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM)
+            .putExtra(android.provider.AlarmClock.EXTRA_HOUR, minutes / 60)
+            .putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minutes % 60)
+            .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, label)
+            .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, true)
+        if (calendarDays.isNotEmpty()) intent.putExtra(android.provider.AlarmClock.EXTRA_DAYS, calendarDays)
+        return start(intent).isSuccess
+    }
+
     @SuppressLint("BatteryLife")
     fun openBatterySettings() = start(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
 
-    private fun start(intent: Intent) = runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    private fun start(intent: Intent) = runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.onFailure { Log.w(TAG, "Could not open ${intent.action}", it) }
 
     // ---------------------------------------------------------------- notifications in
 
@@ -129,7 +149,8 @@ class PhoneServices(private val context: Context) {
             audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
         }
         when (command) {
-            MediaCommand.PLAY -> controls?.play() ?: key(KeyEvent.KEYCODE_MEDIA_PLAY)
+            // With no active player, a media key resumes the last one (what NoiseFit relies on).
+            MediaCommand.PLAY -> controls?.takeIf { mediaController?.playbackState != null }?.play() ?: key(KeyEvent.KEYCODE_MEDIA_PLAY)
             MediaCommand.PAUSE -> controls?.pause() ?: key(KeyEvent.KEYCODE_MEDIA_PAUSE)
             MediaCommand.PREVIOUS -> controls?.skipToPrevious() ?: key(KeyEvent.KEYCODE_MEDIA_PREVIOUS)
             MediaCommand.NEXT -> controls?.skipToNext() ?: key(KeyEvent.KEYCODE_MEDIA_NEXT)
@@ -137,6 +158,8 @@ class PhoneServices(private val context: Context) {
             MediaCommand.VOLUME_DOWN -> audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, 0)
         }
         if (command == MediaCommand.VOLUME_UP || command == MediaCommand.VOLUME_DOWN) NotificationRelay.publishMedia(this)
+        // Players update their session a moment later; report the new state so the watch's buttons stay in step.
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ NotificationRelay.publishMedia(this) }, 600)
     }
 
     // ---------------------------------------------------------------- calls & SMS
@@ -211,6 +234,7 @@ class PhoneServices(private val context: Context) {
 
     companion object {
         private const val TAG = "SilentFitPhone"
+        const val NOISEFIT = "com.noisefit"
         const val CHANNEL_LINK = "link"
         const val CHANNEL_ALERTS = "alerts"
         const val FIND_PHONE_ID = 42

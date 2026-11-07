@@ -73,13 +73,14 @@ fun TodayScreen(nav: NavController) {
     val sync by graph.session.sync.collectAsStateWithLifecycle()
     val settings by graph.settings.flow.collectAsStateWithLifecycle()
     val findingPhone by graph.session.findingPhone.collectAsStateWithLifecycle()
+    val conflict by graph.session.conflict.collectAsStateWithLifecycle()
     val c = Nd.colors
     val profile = settings.profile
 
     val stored = archive.days[HealthRepository.key(LocalDate.now())] ?: HealthDay(HealthRepository.key(LocalDate.now()))
     // The watch finalises today's record late; live totals are ahead during the day.
     val today = remember(stored, live) {
-        live?.let { l -> stored.copy(steps = maxOf(stored.steps, l.steps), calories = maxOf(stored.calories, l.calories), distanceMeters = maxOf(stored.distanceMeters, l.distanceMeters)) } ?: stored
+        live?.let { stored.withLive(it) } ?: stored
     }
     val lastSleep: SleepSummary? = remember(archive) { archive.days.values.lastOrNull { it.sleep != null }?.sleep }
     val heartRate = live?.heartRate?.takeIf { it > 0 } ?: today.heartRate.latest
@@ -113,6 +114,7 @@ fun TodayScreen(nav: NavController) {
                 CircleButton(R.drawable.ic_settings, "Settings", { nav.navigate(Routes.SETTINGS) })
             }
         }
+        if (conflict) item { fit.silent.app.ui.watch.ConflictCard() }
         if (findingPhone) item {
             Card(Modifier.padding(bottom = Space.md)) {
                 Txt("Your watch is looking for this phone", Nd.type.body, color = c.textDisplay)
@@ -186,6 +188,17 @@ fun TodayScreen(nav: NavController) {
                     BarChart(today.hourlySteps, height = 96.dp, highlight = java.time.LocalTime.now().hour)
                 } else {
                     Txt("Hourly steps appear after the next sync.", Nd.type.bodySm, color = c.textDisabled)
+                }
+            }
+        }
+        item {
+            Section("Workouts") {
+                val recent = remember(archive) { archive.workouts.values.sortedByDescending { it.start }.take(3) }
+                if (recent.isEmpty()) {
+                    Txt("Workouts you record on the watch appear here after a sync.", Nd.type.bodySm, color = c.textDisabled)
+                } else {
+                    recent.forEach { w -> fit.silent.app.ui.trends.WorkoutRow(w, profile.metric) }
+                    if (archive.workouts.size > recent.size) fit.silent.app.ui.components.NavRow("All workouts", value = "${archive.workouts.size}") { nav.navigate(Routes.WORKOUTS) }
                 }
             }
         }

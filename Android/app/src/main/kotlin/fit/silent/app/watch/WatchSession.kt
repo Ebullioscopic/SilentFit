@@ -12,6 +12,8 @@ import fit.silent.app.data.PairedWatch
 import fit.silent.app.phone.PhoneNotification
 import fit.silent.app.phone.PhoneServices
 import fit.silent.core.fitness.FitnessDecoder
+import fit.silent.core.fitness.SportIds
+import fit.silent.core.fitness.WorkoutDecoder
 import fit.silent.core.model.AlwaysOnSettings
 import fit.silent.core.model.BatteryStatus
 import fit.silent.core.model.FitnessRecordId
@@ -60,6 +62,7 @@ import fit.silent.core.protocol.PrivateId
 import fit.silent.core.protocol.ProtoMessage
 import fit.silent.core.protocol.Responses
 import fit.silent.core.protocol.UserSettingId
+import fit.silent.core.protocol.WatchApps
 import fit.silent.core.protocol.WearField
 import fit.silent.core.protocol.WearMessage
 import fit.silent.core.protocol.WearType
@@ -164,7 +167,7 @@ class WatchSession(
     private var pendingIds: List<FitnessRecordId> = emptyList()
     private var lastProgressAt = 0L
     private var callKey = ""
-    private var nowPlaying = NowPlaying()
+    private var nowPlaying = NowPlaying(fit.silent.core.model.PlaybackState.PAUSED)
     private var uiVisible = false
     @Volatile private var prepareReply: CompletableDeferred<PrepareReply>? = null
     @Volatile private var installResult: CompletableDeferred<InstallResult>? = null
@@ -172,6 +175,18 @@ class WatchSession(
     @Volatile private var bgResult: CompletableDeferred<Int>? = null
     @Volatile private var uploading = false
     @Volatile private var uploadAcks = 0
+    /** The watch's latest reply to each settings GET (by GET id); settings writes edit these. */
+    private val settingReplies = HashMap<Int, ProtoMessage>()
+    private var sportIds: SportIds? = null
+    private var syncingSport = false
+    private var connectedAt = 0L
+    /** Consecutive links that another app took over within seconds (NoiseFit holds the same channel). */
+    private var stolenLinks = 0
+    private var aclLostAt = 0L
+    private val _conflict = MutableStateFlow(false)
+    /** True when another companion app keeps taking the watch's data channel. */
+    val conflict: StateFlow<Boolean> = _conflict.asStateFlow()
+    private val logFile = java.io.File(context.filesDir, "session.log")
 
     private sealed interface Outgoing {
         class Cmd(val command: BerryCommand) : Outgoing
@@ -181,7 +196,13 @@ class WatchSession(
     init {
         phone.onNotification = { n -> scope.launch { forward(n) } }
         phone.onCallEnded = { scope.launch { if (callKey.isNotEmpty() && isConnected) { callKey = ""; send(Commands.callState(1)) } } }
-        phone.onNowPlaying = { info -> scope.launch { if (info != nowPlaying) { nowPlaying = info; if (isConnected) send(Commands.musicInfo(info)) } } }
+        phone.onNowPlaying = { info ->
+            scope.launch {
+                // The watch only shows state, title and volume; position ticks are not worth a frame.
+                val shown = NowPlaying(info.state, info.title, volume = info.volume, maxVolume = info.maxVolume)
+                if (shown != nowPlaying) { nowPlaying = shown; if (isConnected) send(Commands.musicInfo(shown)) }
+            }
+        }
     }
 
     private val prefs get() = settings.value
@@ -195,6 +216,8 @@ class WatchSession(
         val target = prefs.pairedWatch ?: return@launch
         if (_connection.value.isBusy || isConnected) return@launch
         userDisconnected = false
+        stolenLinks = 0
+        _conflict.value = false
         open(target)
     }
 
@@ -245,11 +268,22 @@ class WatchSession(
 
     /** The watch's Bluetooth link came back (ACL connected) — connect now instead of waiting for backoff. */
     fun onWatchNearby(address: String) = scope.launch {
-        if (address.equals(prefs.pairedWatch?.address, true) && !isConnected && !_connection.value.isBusy && !userDisconnected) {
+        if (address.equals(prefs.pairedWatch?.address, true) && !isConnected && !_connection.value.isBusy && !userDisconnected && !_conflict.value) {
             attempts = 0
             reconnectJob?.cancel()
             prefs.pairedWatch?.let { open(it) }
         }
+    }
+
+    /**
+     * The whole Bluetooth link to the watch went down (ACL disconnected): the watch restarted, was switched off or
+     * went out of range. Unlike another app taking the data channel, this is what a crash looks like.
+     */
+    fun onWatchLinkLost(address: String) = scope.launch {
+        if (!address.equals(prefs.pairedWatch?.address, true)) return@launch
+        aclLostAt = System.currentTimeMillis()
+        log("bluetooth link to the watch lost")
+        if (prefs.faceTrial != null) trialWatchRestarted = true
     }
 
     fun setUiVisible(visible: Boolean) = scope.launch {
@@ -309,6 +343,7 @@ class WatchSession(
             LinkState.CONNECTING -> setPhase(LinkPhase.CONNECTING, "Connecting to ${prefs.pairedWatch?.name ?: "watch"}")
             LinkState.CONNECTED -> {
                 attempts = 0
+                connectedAt = System.currentTimeMillis()
                 startSender()
                 setPhase(LinkPhase.HANDSHAKE, "Securing connection")
                 send(Commands.hello())
@@ -318,13 +353,45 @@ class WatchSession(
                 periodicJob?.cancel()
                 senderJob?.cancel()
                 _sync.update { it.copy(running = false) }
+                syncingSport = false
                 failPending("Watch disconnected")
                 if (userDisconnected) { setPhase(LinkPhase.DISCONNECTED, "Disconnected"); return }
                 if (wasConnected && prefs.faceTrial != null) { trialLinkDropped = true; log("face trial: link dropped") }
+                if (connectedAt > 0) noteDrop()
+                connectedAt = 0
+                if (_conflict.value) {
+                    setPhase(LinkPhase.FAILED, "Another app is using your watch")
+                    if (prefs.autoReconnect && prefs.pairedWatch != null && bluetoothOn) scheduleReconnect(CONFLICT_RETRY_SECONDS)
+                    return
+                }
                 setPhase(if (state == LinkState.FAILED) LinkPhase.FAILED else LinkPhase.DISCONNECTED, message)
                 if (prefs.autoReconnect && prefs.pairedWatch != null && bluetoothOn) scheduleReconnect(if (wasConnected) 3 else null)
             }
         }
+    }
+
+    /**
+     * Only one app can hold the watch's data channel. When NoiseFit (or anything else) connects, the watch drops ours
+     * within seconds while the Bluetooth link itself stays up; reconnecting at once just knocks the other app off and
+     * both keep failing. After a few such drops, stop fighting and tell the user.
+     */
+    private fun noteDrop() {
+        val now = System.currentTimeMillis()
+        val lasted = now - connectedAt
+        val watchStillThere = now - aclLostAt > 5_000
+        stolenLinks = if (lasted < STOLEN_LINK_MS && watchStillThere) stolenLinks + 1 else 0
+        if (stolenLinks >= 3 && !_conflict.value) {
+            _conflict.value = true
+            log("link taken over $stolenLinks times in a row: another app${if (phone.noiseFitInstalled) " (NoiseFit)" else ""} is connected")
+        }
+    }
+
+    /** User dismissed the conflict (e.g. after disabling NoiseFit): reconnect normally. */
+    fun retryAfterConflict() = scope.launch {
+        stolenLinks = 0
+        _conflict.value = false
+        attempts = 0
+        if (!isConnected && !_connection.value.isBusy) prefs.pairedWatch?.let { userDisconnected = false; open(it) }
     }
 
     /** Backoff 5 s → 5 min; ACL and adapter broadcasts short-circuit the wait. */
@@ -362,8 +429,12 @@ class WatchSession(
         }
     }
 
-    /** Proven commands always; reconstructed ones only when the user opted into experimental controls. */
-    fun permits(c: BerryCommand) = CommandPolicy.isProven(c) || prefs.experimentalWatchControls
+    /** Proven commands always; settings rebuilt from the watch's reply unless turned off; reconstructed ones only when opted in. */
+    fun permits(c: BerryCommand) = when (CommandPolicy.tier(c)) {
+        CommandPolicy.Tier.PROVEN -> true
+        CommandPolicy.Tier.ECHOED -> prefs.editWatchSettings || prefs.experimentalWatchControls
+        CommandPolicy.Tier.EXPERIMENTAL -> prefs.experimentalWatchControls
+    }
 
     private suspend fun transmit(c: BerryCommand) {
         if (!permits(c)) { log("blocked ${c.label}: not proven on this watch"); return }
@@ -459,6 +530,7 @@ class WatchSession(
             LauncherList.entries.forEach { send(Commands.getLauncher(it)) }
             send(Commands.getLanguages())
         }
+        fit.silent.app.phone.NotificationRelay.publishMedia(phone)
         send(Commands.musicInfo(nowPlaying))
         if (uiVisible) send(Commands.liveData(true))
         val gen = generation
@@ -473,7 +545,9 @@ class WatchSession(
                 if (minutes % 30 == 0) send(Commands.battery())
                 val interval = prefs.syncIntervalMinutes
                 if (interval > 0 && minutes % interval == 0) syncHealth()
-                if (_sync.value.running && System.currentTimeMillis() - lastProgressAt > 60_000) finishSync("Sync timed out")
+                if (_sync.value.running && System.currentTimeMillis() - lastProgressAt > 60_000) {
+                    if (syncingSport) finishSport("Workout sync timed out") else finishSync("Sync timed out")
+                }
             }
         }
     }
@@ -482,7 +556,9 @@ class WatchSession(
         Log.d(TAG, "← ${m.type}/${m.id}${if (m.isError) " error ${m.errorCode}" else ""}")
         if (m.isError) {
             log("← ${m.type}/${m.id} error ${m.errorCode}")
-            if (m.type == WearType.SETTING_MENU && (m.id == MenuId.FITNESS_IDS || m.id == MenuId.FILE_SEND_STATUS)) finishSync("Watch could not send health data (${m.errorCode})")
+            if (m.type == WearType.SETTING_MENU && (m.id == MenuId.FITNESS_IDS || m.id == MenuId.FILE_SEND_STATUS)) {
+                if (syncingSport) finishSport("Watch could not send workouts (${m.errorCode})") else finishSync("Watch could not send health data (${m.errorCode})")
+            }
             if (m.type == WearType.WATCH_FACE && m.id == FaceId.PREPARE) prepareReply?.completeExceptionally(IllegalStateException("Watch refused the face (error ${m.errorCode})"))
             return
         }
@@ -510,8 +586,9 @@ class WatchSession(
 
     private fun handleMenu(id: Int, menu: ProtoMessage) {
         if (MenuId.isWatchChange(id) && !menu.fields.any()) { send(Commands.get(MenuId.getFor(id))); return }
+        ECHO_FIELDS[id]?.let { field -> menu.message(field)?.let { settingReplies[id] = it } }
         when (id) {
-            MenuId.FITNESS_IDS -> {
+            MenuId.FITNESS_IDS -> if (syncingSport) handleSportIds(menu) else {
                 val ids = FitnessDecoder.parseIdList(menu)
                 if (ids.isEmpty()) { finishSync("Up to date"); return }
                 pendingIds = ids
@@ -520,10 +597,19 @@ class WatchSession(
                 send(Commands.requestFitnessFile(FileType.DAILY, ids))
             }
             MenuId.DEVICE_FILE_STATUS -> menu.message(MenuField.DEVICE_FILE_STATUS)?.let { s ->
-                if ((s.int(2) ?: 0) == 1 && (s.int(1) ?: 0) == FileType.DAILY) {
-                    if (prefs.deleteAfterSync && pendingIds.isNotEmpty()) send(Commands.deleteFitnessIds(FileType.DAILY, pendingIds))
-                    pendingIds = emptyList()
-                    finishSync("Synced")
+                val ok = (s.int(2) ?: 0) == 1
+                when (s.int(1) ?: 0) {
+                    FileType.DAILY -> if (ok) {
+                        if (prefs.deleteAfterSync && pendingIds.isNotEmpty()) send(Commands.deleteFitnessIds(FileType.DAILY, pendingIds))
+                        pendingIds = emptyList()
+                        finishSync("Synced")
+                    }
+                    FileType.SPORT -> {
+                        val ids = sportIds
+                        if (ok && ids != null && prefs.deleteAfterSync) send(Commands.deleteSportIds(ids))
+                        sportIds = null
+                        finishSport(if (ok) "Workouts synced" else "Watch could not send workouts")
+                    }
                 }
             }
             MenuId.HEART_RATE -> menu.message(MenuField.HEART_RATE)?.let { s -> _settings.update { it.copy(heartRate = Responses.heartRate(s)) } }
@@ -599,6 +685,7 @@ class WatchSession(
     }
 
     private fun handleFile(type: Int, data: ByteArray) {
+        if (type == FileType.SPORT) { handleSportFile(data); return }
         if (type != FileType.DAILY) return
         val days = HashMap<String, HealthDay>()
         pendingIds.map { it.dayKey }.distinct().forEach { key -> health.archive.value.days[key]?.let { days[key] = it } }
@@ -610,8 +697,50 @@ class WatchSession(
 
     private fun finishSync(message: String) {
         _sync.value = SyncState(false, 1f, message)
-        if (message == "Synced" || message == "Up to date") settings.update { it.copy(lastSync = System.currentTimeMillis()) }
+        val ok = message == "Synced" || message == "Up to date"
+        if (ok) settings.update { it.copy(lastSync = System.currentTimeMillis()) }
         log("sync: $message")
+        if (ok && isConnected) syncWorkouts()
+    }
+
+    // ================================================================ workouts
+
+    /** Same request NoiseFit sends after every daily sync (setting_menu 138 with file type 7). */
+    private fun syncWorkouts() {
+        if (syncingSport) return
+        syncingSport = true
+        lastProgressAt = System.currentTimeMillis()
+        send(Commands.fitnessIdList(FileType.SPORT))
+        val gen = generation
+        scope.launch {
+            delay(20_000)
+            if (gen == generation && syncingSport && sportIds == null) finishSport("No answer about workouts")
+        }
+    }
+
+    private fun handleSportIds(menu: ProtoMessage) {
+        val ids = WorkoutDecoder.parseIds(menu)
+        if (ids == null || ids.isEmpty) { finishSport("No new workouts"); return }
+        val known = health.archive.value.workouts.keys
+        sportIds = ids
+        log("workouts on watch: ${ids.count} records (${known.size} already saved)")
+        _sync.value = SyncState(true, 0.2f, "Receiving workouts")
+        lastProgressAt = System.currentTimeMillis()
+        send(Commands.requestSportFile(ids))
+    }
+
+    private fun handleSportFile(data: ByteArray) {
+        val ids = sportIds ?: return
+        val workouts = WorkoutDecoder.decode(data, ids)
+        if (workouts.isNotEmpty()) health.addWorkouts(workouts)
+        log("decoded ${workouts.size} workouts from ${ids.count} records")
+        _sync.update { it.copy(progress = 0.95f, message = "Saved ${workouts.size} workouts") }
+    }
+
+    private fun finishSport(message: String) {
+        syncingSport = false
+        _sync.value = SyncState(false, 1f, if (message == "No new workouts") "Synced" else message)
+        log("workouts: $message")
     }
 
     // ================================================================ phone relays
@@ -628,7 +757,12 @@ class WatchSession(
             }
             PhoneNotification.Kind.MISSED_CALL -> if (p.forwardCalls) send(Commands.systemNotification(1, n.text, n.title, n.text, n.appName, n.packageName))
             PhoneNotification.Kind.SMS -> if (p.forwardMessages) send(Commands.systemNotification(2, n.title, n.title, n.text, n.appName, n.packageName))
-            PhoneNotification.Kind.APP -> if (p.forwardNotifications && n.packageName !in p.mutedPackages) send(Commands.appNotification(n.appName, n.packageName, n.title, n.text, n.key))
+            PhoneNotification.Kind.APP -> if (p.forwardNotifications && n.packageName !in p.mutedPackages) {
+                // The watch only knows the apps in WatchApps; name the others in the title so they are still recognisable.
+                val target = WatchApps.forPackage(n.packageName)
+                val title = if (target == WatchApps.OTHER && !n.title.startsWith(n.appName)) listOf(n.appName, n.title).filter { it.isNotBlank() }.joinToString(" · ") else n.title
+                send(Commands.appNotification(target.tag, target.pageName, title, n.text, n.key))
+            }
         }
     }
 
@@ -638,7 +772,9 @@ class WatchSession(
         return power.isInteractive && !keyguard.isKeyguardLocked
     }
 
-    fun sendTestNotification() = send(Commands.appNotification("SilentFit", context.packageName, "SilentFit", "Notifications are working.", "silentfit-test"))
+    fun sendTestNotification() = WatchApps.forPackage("com.noisefit").let {
+        send(Commands.appNotification(it.tag, it.pageName, "SilentFit", "Notifications are working.", "silentfit-test"))
+    }
 
     // ================================================================ user actions
 
@@ -675,8 +811,10 @@ class WatchSession(
     private val _trial = MutableStateFlow(settings.value.faceTrial)
     val faceTrial: StateFlow<FaceTrial?> = _trial.asStateFlow()
     private var trialJob: Job? = null
-    /** The watch dropped the link unexpectedly while a trial was running (what a crash looks like). */
+    /** The watch dropped the link unexpectedly while a trial was running. */
     private var trialLinkDropped = false
+    /** The whole Bluetooth link went down during the trial — what a face crashing the watch looks like. */
+    private var trialWatchRestarted = false
 
     /**
      * Makes [faceId] current and watches the link. The trial passes after [TRIAL_MS] of connected time without an
@@ -692,6 +830,7 @@ class WatchSession(
         settings.update { it.copy(faceTrial = trial) }
         _trial.value = trial
         trialLinkDropped = false
+        trialWatchRestarted = false
         send(Commands.setWatchFace(faceId))
         log("face trial: $faceId (fallback $previous)")
         watchTrial()
@@ -720,24 +859,35 @@ class WatchSession(
     private fun endTrial(reason: String) {
         trialJob?.cancel()
         trialLinkDropped = false
+        trialWatchRestarted = false
         if (prefs.faceTrial != null) settings.update { it.copy(faceTrial = null) }
         _trial.value = null
         log("face trial $reason")
     }
 
-    /** Called when the link is ready: undo a trial whose link dropped, otherwise keep watching. */
+    /**
+     * Called when the link is ready. A trial is undone only if the watch itself went away (Bluetooth link lost, as in a
+     * crash and reboot); losing just the data channel — another app connecting, a busy phone — keeps the new face.
+     */
     private fun resumeTrial() {
         val trial = prefs.faceTrial ?: run { _trial.value = null; return }
         _trial.value = trial
-        if (trialLinkDropped) revertTrial(trial) else watchTrial()
+        when {
+            trialLinkDropped && trialWatchRestarted -> revertTrial(trial)
+            else -> {
+                if (trialLinkDropped) log("face trial: data link dropped but the watch stayed connected; keeping ${trial.faceId}")
+                trialLinkDropped = false
+                watchTrial()
+            }
+        }
     }
 
     private fun revertTrial(trial: FaceTrial) {
-        log("face trial failed (link dropped): restoring ${trial.previousFaceId}, removing ${trial.faceId}")
+        log("face trial failed (watch restarted): restoring ${trial.previousFaceId}, removing ${trial.faceId}")
         send(Commands.setWatchFace(trial.previousFaceId))
         send(Commands.removeWatchFace(trial.faceId))
         endTrial("reverted")
-        _notice.value = "The watch disconnected while trying the new face, so SilentFit switched back to your previous face and removed the new one."
+        _notice.value = "Your watch restarted while trying the new face, so SilentFit switched back to your previous face and removed the new one."
     }
 
     /** User confirms the face works before the trial window ends. */
@@ -758,19 +908,35 @@ class WatchSession(
         }
     }
 
-    private fun apply(command: BerryCommand, transform: (WatchSettings) -> WatchSettings) {
-        if (!permits(command)) { log("blocked ${command.label}: enable experimental watch controls to change this"); return }
+    private fun apply(command: BerryCommand, getId: Int? = null, transform: (WatchSettings) -> WatchSettings) {
+        if (!permits(command)) {
+            log(
+                when {
+                    getId != null && settingReplies[getId] == null && prefs.editWatchSettings -> "blocked ${command.label}: waiting for the watch's current setting"
+                    else -> "blocked ${command.label}: enable experimental watch controls to change this"
+                },
+            )
+            if (getId != null && isConnected) send(Commands.get(getId))
+            return
+        }
         _settings.update(transform)
         send(command)
+        // Read it back: confirms the change and gives the next write the watch's new state to edit.
+        if (getId != null) send(Commands.get(getId))
     }
 
-    fun setHeartRate(s: HeartRateSettings) = apply(Commands.setHeartRate(s)) { it.copy(heartRate = s) }
-    fun setSpO2(s: SpO2Settings) = apply(Commands.setSpO2(s)) { it.copy(spo2 = s) }
-    fun setStress(s: StressSettings) = apply(Commands.setStress(s)) { it.copy(stress = s) }
-    fun setDoNotDisturb(s: ScheduleSettings) = apply(Commands.setDoNotDisturb(s)) { it.copy(doNotDisturb = s) }
-    fun setRaiseToWake(s: RaiseToWakeSettings) = apply(Commands.setRaiseToWake(s)) { it.copy(raiseToWake = s) }
-    fun setReminder(kind: ReminderKind, s: ReminderSettings) = apply(Commands.setReminder(kind, s)) { it.copy(reminders = it.reminders + (kind to s)) }
-    fun setAlarms(alarms: List<WatchAlarm>) = apply(Commands.setAlarms(alarms)) { it.copy(alarms = alarms) }
+    private fun reply(getId: Int) = settingReplies[getId]
+
+    fun setHeartRate(s: HeartRateSettings) = apply(Commands.setHeartRate(s, reply(MenuId.HEART_RATE)), MenuId.HEART_RATE) { it.copy(heartRate = s) }
+    fun setSpO2(s: SpO2Settings) = apply(Commands.setSpO2(s, reply(MenuId.SPO2)), MenuId.SPO2) { it.copy(spo2 = s) }
+    fun setStress(s: StressSettings) = apply(Commands.setStress(s, reply(MenuId.STRESS)), MenuId.STRESS) { it.copy(stress = s) }
+    fun setDoNotDisturb(s: ScheduleSettings) = apply(Commands.setDoNotDisturb(s, reply(MenuId.DND)), MenuId.DND) { it.copy(doNotDisturb = s) }
+    fun setRaiseToWake(s: RaiseToWakeSettings) = apply(Commands.setRaiseToWake(s, reply(MenuId.WRIST)), MenuId.WRIST) { it.copy(raiseToWake = s) }
+    fun setReminder(kind: ReminderKind, s: ReminderSettings) {
+        val getId = Commands.reminderIds(kind).first
+        apply(Commands.setReminder(kind, s, reply(getId)), getId) { it.copy(reminders = it.reminders + (kind to s)) }
+    }
+    fun setAlarms(alarms: List<WatchAlarm>) = apply(Commands.setAlarms(alarms, reply(MenuId.ALARMS)), MenuId.ALARMS) { it.copy(alarms = alarms) }
     fun setVibration(level: Int) = apply(Commands.setVibration(level)) { it.copy(vibration = level) }
     fun setPowerSaving(on: Boolean) = apply(Commands.setPowerSaving(on)) { it.copy(powerSaving = on) }
     fun setCoverToMute(on: Boolean) = apply(Commands.setCoverToMute(on)) { it.copy(coverToMute = on) }
@@ -911,9 +1077,14 @@ class WatchSession(
     fun clearLog() { _log.value = emptyList() }
 
     private fun log(line: String) {
-        Log.d(TAG, line)
+        Log.i(TAG, line)
         val stamp = LocalTime.now().format(STAMP)
         _log.update { (it + "$stamp  $line").takeLast(400) }
+        // Kept on disk so disconnects can be diagnosed after the fact (adb shell run-as … cat files/session.log).
+        runCatching {
+            if (logFile.length() > 512 * 1024) logFile.renameTo(java.io.File(logFile.parentFile, "session.log.1"))
+            logFile.appendText("${java.time.LocalDateTime.now().format(FILE_STAMP)}  $line\n")
+        }
     }
 
     companion object {
@@ -923,6 +1094,17 @@ class WatchSession(
         private const val ACK_WINDOW = 16
         private val BACKOFF = intArrayOf(5, 10, 20, 40, 60, 120, 300)
         private val STAMP = DateTimeFormatter.ofPattern("HH:mm:ss")
+        private val FILE_STAMP = DateTimeFormatter.ofPattern("MM-dd HH:mm:ss")
+        /** A link that another app takes over dies within seconds of opening. */
+        private const val STOLEN_LINK_MS = 45_000L
+        private const val CONFLICT_RETRY_SECONDS = 600
+        /** GET id → setting_menu field of settings whose writes edit the watch's reply. */
+        private val ECHO_FIELDS = mapOf(
+            MenuId.HEART_RATE to MenuField.HEART_RATE, MenuId.SPO2 to MenuField.SPO2, MenuId.STRESS to MenuField.STRESS,
+            MenuId.DND to MenuField.DND, MenuId.WRIST to MenuField.WRIST, MenuId.ALARMS to MenuField.ALARMS,
+            MenuId.SEDENTARY to MenuField.SEDENTARY, MenuId.DRINK to MenuField.DRINK, MenuId.MEDICATION to MenuField.MEDICATION,
+            MenuId.MEALS to MenuField.MEALS, MenuId.WASH to MenuField.WASH,
+        )
         const val TRIAL_MS = 3 * 60_000L
         private const val TRIAL_TICK = 5_000L
         private val PREPARE_STATUS = listOf(

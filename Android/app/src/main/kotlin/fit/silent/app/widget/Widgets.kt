@@ -84,14 +84,15 @@ object WidgetUpdater {
         val s = graph.session
         graph.scope.launch {
             combine(graph.health.archive, s.live, s.battery, s.connection, graph.settings.flow) { archive, live, battery, connection, settings ->
-                val today = archive.days[HealthRepository.key(LocalDate.now())]
+                val stored = archive.days[HealthRepository.key(LocalDate.now())]
+                val today = if (stored != null && live != null) stored.withLive(live) else stored
                 val sleep = archive.days.values.lastOrNull { it.sleep != null }?.sleep
                 WidgetSnapshot(
-                    steps = maxOf(today?.steps ?: 0, live?.steps ?: 0),
+                    steps = today?.steps ?: live?.steps ?: 0,
                     stepGoal = settings.profile.stepGoal,
                     heartRate = live?.heartRate?.takeIf { it > 0 } ?: today?.heartRate?.latest ?: 0,
                     sleepMinutes = sleep?.totalMinutes ?: 0,
-                    calories = maxOf(today?.calories ?: 0, live?.calories ?: 0),
+                    calories = today?.calories ?: live?.calories ?: 0,
                     battery = battery?.level ?: -1,
                     charging = battery?.state == fit.silent.core.model.ChargeState.CHARGING,
                     connected = connection.isConnected,

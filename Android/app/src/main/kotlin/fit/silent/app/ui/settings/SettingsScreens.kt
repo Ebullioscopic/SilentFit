@@ -101,9 +101,13 @@ fun SettingsScreen(nav: NavController) {
         }
         item {
             Section("Watch safety") {
+                SwitchRow(
+                    "Edit watch settings", settings.editWatchSettings, { on -> graph.settings.update { it.copy(editWatchSettings = on) } },
+                    subtitle = "Alarms, monitoring, reminders, do not disturb and raise to wake. Each change re-sends the watch's own setting with only your edit.",
+                )
                 SwitchRow("Experimental watch controls", settings.experimentalWatchControls, { on ->
                     if (on) confirmExperimental = true else graph.settings.update { it.copy(experimentalWatchControls = false) }
-                }, subtitle = "Lets SilentFit change watch settings, profile, units and the app menu")
+                }, subtitle = "Lets SilentFit change screen, always-on, profile, units and the app menu")
                 if (confirmExperimental) Card(Modifier.padding(vertical = Space.md)) {
                     Txt(
                         "These commands were reconstructed from the protocol, not observed from the official app on this watch. " +

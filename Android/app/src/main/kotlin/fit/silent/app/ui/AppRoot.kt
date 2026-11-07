@@ -82,6 +82,7 @@ object Routes {
     const val WATCH = "watch"
     const val SETTINGS = "settings"
     const val ONBOARDING = "onboarding"
+    const val WORKOUTS = "workouts"
     fun trend(metric: String) = "trend/$metric"
     fun face(id: String) = "face/$id"
     fun faceCode(id: String) = "face-code/$id"
@@ -116,6 +117,7 @@ fun AppRoot(graph: AppGraph) {
                     }
                     composable(Routes.TODAY) { TodayScreen(nav) }
                     composable(Routes.TRENDS) { TrendsScreen(nav) }
+                    composable(Routes.WORKOUTS) { fit.silent.app.ui.trends.WorkoutsScreen(nav) }
                     composable("trend/{metric}", listOf(navArgument("metric") { type = NavType.StringType })) {
                         TrendDetailScreen(it.arguments?.getString("metric").orEmpty(), nav)
                     }

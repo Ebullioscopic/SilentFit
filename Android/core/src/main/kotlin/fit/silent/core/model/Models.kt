@@ -223,6 +223,8 @@ class FitnessRecordId(
     val day: Int,
     val functionType: Int,
     val length: Int,
+    /** Record start time as `HH:mm:ss`; distinguishes several records of the same day. */
+    val time: String = "",
 ) {
     val dayKey get() = HealthDay.key(year, month, day)
 }
@@ -257,6 +259,37 @@ data class SampleSeries(val interval: Int = 0, val values: List<Int> = emptyList
     val latest get() = values.lastOrNull { it > 0 } ?: 0
 }
 
+/** Activity totals of one day as the watch reported them (its counters restart from zero when it reboots). */
+@Serializable
+data class DailyCounts(
+    val steps: Int = 0,
+    val distanceMeters: Int = 0,
+    val calories: Int = 0,
+    val hourlySteps: List<Int> = emptyList(),
+    val hourlyDistance: List<Int> = emptyList(),
+    val hourlyCalories: List<Int> = emptyList(),
+) {
+    operator fun plus(o: DailyCounts) = DailyCounts(
+        steps + o.steps, distanceMeters + o.distanceMeters, calories + o.calories,
+        addHours(hourlySteps, o.hourlySteps), addHours(hourlyDistance, o.hourlyDistance), addHours(hourlyCalories, o.hourlyCalories),
+    )
+
+    /** True when [next] cannot follow this report without the watch having restarted its counters. */
+    fun isResetBy(next: DailyCounts): Boolean =
+        next.steps < steps || next.distanceMeters < distanceMeters || next.calories < calories ||
+            hourlySteps.indices.any { it < next.hourlySteps.size && next.hourlySteps[it] < hourlySteps[it] }
+
+    companion object {
+        private fun addHours(a: List<Int>, b: List<Int>) = List(maxOf(a.size, b.size)) { a.getOrElse(it) { 0 } + b.getOrElse(it) { 0 } }
+    }
+}
+
+/** One daily activity record as last reported, plus what it had counted before the watch restarted its counters. */
+@Serializable
+data class DailyReport(val latest: DailyCounts = DailyCounts(), val carried: DailyCounts = DailyCounts()) {
+    val total get() = carried + latest
+}
+
 @Serializable
 data class HealthDay(
     val id: String,
@@ -272,9 +305,27 @@ data class HealthDay(
     val spo2: SampleSeries = SampleSeries(),
     val stress: SampleSeries = SampleSeries(),
     val sleep: SleepSummary? = null,
+    /** The watch's latest report per daily record (keyed by the record's start time), and activity carried over from before a watch restart. */
+    val dailyReports: Map<String, DailyReport> = emptyMap(),
 ) {
     val standingHourCount get() = standingHours.count { it > 0 }
     val activeMinutes get() = activeMinutesByHour.sum()
+    val counts get() = DailyCounts(steps, distanceMeters, calories, hourlySteps, hourlyDistance, hourlyCalories)
+
+    /**
+     * Today's totals with the watch's live counters, which restart from zero when the watch reboots:
+     * the live value replaces the newest record's last report, or adds to everything stored once it has restarted.
+     */
+    fun withLive(live: LiveData): HealthDay {
+        val current = dailyReports.maxByOrNull { it.key }?.value?.latest ?: DailyCounts()
+        val restarted = live.steps < current.steps
+        val base = if (restarted) counts else DailyCounts(steps - current.steps, distanceMeters - current.distanceMeters, calories - current.calories)
+        return copy(
+            steps = maxOf(steps, base.steps + live.steps),
+            calories = maxOf(calories, base.calories + live.calories),
+            distanceMeters = maxOf(distanceMeters, base.distanceMeters + live.distanceMeters),
+        )
+    }
 
     companion object {
         fun key(year: Int, month: Int, day: Int) = "%04d-%02d-%02d".format(year, month, day)

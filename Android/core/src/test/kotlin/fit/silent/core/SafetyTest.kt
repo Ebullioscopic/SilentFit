@@ -3,6 +3,8 @@ package fit.silent.core
 import fit.silent.core.model.FitnessRecordId
 import fit.silent.core.model.HeartRateSettings
 import fit.silent.core.model.LauncherList
+import fit.silent.core.model.NowPlaying
+import fit.silent.core.model.PlaybackState
 import fit.silent.core.model.UserProfile
 import fit.silent.core.protocol.BerryCommand
 import fit.silent.core.protocol.BerryFrame
@@ -10,6 +12,7 @@ import fit.silent.core.protocol.CommandPolicy
 import fit.silent.core.protocol.Commands
 import fit.silent.core.protocol.FileType
 import fit.silent.core.protocol.MenuId
+import fit.silent.core.protocol.WatchApps
 import fit.silent.core.watchface.Anchor
 import fit.silent.core.watchface.Binding
 import fit.silent.core.watchface.FaceCompiler
@@ -52,6 +55,38 @@ class SafetyTest {
         assertContentEquals(hex("66 66 48 5A 31 01 03 04 00 08 09 10 05"), frame(0x31, Commands.quickReplies()))
         assertContentEquals(hex("66 66 48 5A 32 01 03 08 00 08 09 10 04 62 02 20 01"), frame(0x32, Commands.callState(1)))
         assertContentEquals(hex("66 66 48 5A 5D 01 03 04 00 08 08 10 01"), frame(0x5D, Commands.findWatch()))
+    }
+
+    /** NoiseFit 5.4.7 log captures (2026-10-19/20): app notifications and now-playing. */
+    @Test fun notificationAndMusicMatchOfficialAppBytes() {
+        val outlook = WatchApps.forPackage("com.microsoft.office.outlook")
+        assertContentEquals(
+            hex(
+                "66 66 48 5A 1F 01 03 F4 00 08 09 10 03 62 ED 01 12 EA 01 0A 07 6F 75 74 6C 6F 6F 6B 12 1C 63 6F 6D 2E 6D 69 63 72 6F 73 6F 66 74 2E 6F 66 66 69 63 65 2E 6F 75 74 6C 6F 6F 6B " +
+                    "1A 0C 43 6F 6E 74 61 63 74 20 73 79 6E 63 22 73 4F 75 74 6C 6F 6F 6B 20 6E 65 65 64 73 20 61 63 63 65 73 73 20 74 6F 20 63 6F 6E 74 61 63 74 73 20 74 6F 20 73 79 6E 63 20 74 68 65 6D 2E 20 " +
+                    "50 6C 65 61 73 65 20 61 6C 6C 6F 77 20 61 63 63 65 73 73 20 6E 6F 77 2E 20 43 6F 6E 74 61 63 74 20 79 6F 75 72 20 49 54 20 68 65 6C 70 20 64 65 73 6B 20 66 6F 72 20 6D 6F 72 65 20 64 65 74 61 69 6C 73 2E " +
+                    "2A 01 74 32 39 31 31 7C 63 6F 6D 2E 6D 69 63 72 6F 73 6F 66 74 2E 6F 66 66 69 63 65 2E 6F 75 74 6C 6F 6F 6B 7C 31 7C 49 6E 74 75 6E 65 41 70 70 43 6F 6E 66 69 67 7C 31 31 31 30 34 31 34 38 01",
+            ),
+            frame(
+                0x1F,
+                Commands.appNotification(
+                    outlook.tag, outlook.pageName, "Contact sync",
+                    "Outlook needs access to contacts to sync them. Please allow access now. Contact your IT help desk for more details.",
+                    "11|com.microsoft.office.outlook|1|IntuneAppConfig|1110414",
+                ),
+            ),
+        )
+        assertEquals(WatchApps.Target("whats app", "com.whatsapp"), WatchApps.forPackage("com.whatsapp"))
+        assertEquals(WatchApps.Target("linked in", "com.linkedin.android"), WatchApps.forPackage("com.linkedin.android"))
+        assertEquals(WatchApps.OTHER, WatchApps.forPackage("com.example.unknown"))
+        assertContentEquals(
+            hex("66 66 48 5A 03 01 03 22 00 08 0A 10 03 6A 1C 0A 1A 08 02 12 0C 53 68 75 62 68 61 61 72 61 6D 62 68 28 08 30 10 38 00 40 00 50 01"),
+            frame(3, Commands.musicInfo(NowPlaying(PlaybackState.PLAYING, "Shubhaarambh", volume = 8, maxVolume = 16))),
+        )
+        assertContentEquals(
+            hex("66 66 48 5A 0A 01 03 16 00 08 0A 10 03 6A 10 0A 0E 08 03 12 00 28 0D 30 10 38 00 40 00 50 01"),
+            frame(0x0A, Commands.musicInfo(NowPlaying(PlaybackState.PAUSED, "", volume = 13, maxVolume = 16))),
+        )
     }
 
     @Test fun commandPolicyAllowsOnlyObservedCommands() {

@@ -26,7 +26,8 @@ byte-for-byte.
 | Byte order | Little-endian for all fixed-width integers |
 
 Only one app can hold the RFCOMM channel. NoiseFit must be closed (force-stopped) before
-SilentFit connects.
+SilentFit connects: while both run, each connection attempt tears down the other's link and both
+drop every few seconds (SilentFit detects this and stops retrying).
 
 ---
 
@@ -182,7 +183,7 @@ Notation: `type/id → field{subfield…}`. Example frames are real captures.
 
 | Command | Encoding |
 |---------|----------|
-| App notification | `9/3` `notification(12){app_notification(2){1 app name, 2 package, 3 title, 4 text, 5 ticker, 6 key}}` |
+| App notification | `9/3` `notification(12){app_notification(2){1 app tag, 2 package, 3 title, 4 text, 5 ticker, 6 key, 7 support_open}}` — the watch picks the icon **and the name it shows** from field 1, a fixed tag such as `whats app`, `gmail`, `outlook`, `linked in`, `telegram` (NoiseFit's `ApplicationType` with `_` → space), with field 2 the canonical package; anything else shows as "Other". NoiseFit sends ticker `t` and support_open 1. Table in `core/…/protocol/WatchApps.kt`. |
 | Call / missed call / SMS | `9/2` `notification(12){system_notification(1){1 kind (0 call, 1 missed, 2 SMS), 2 number, 3 contact, 4 text, 5 app name, 6 package}}` |
 | Call state | `9/4` `notification(12){call_state(4)}` 0 answer, 1 hang up, 2 mute. Sent by the app when a call ends (`08 09 10 04 62 02 20 01`), and by the watch when the wearer answers/declines. |
 | Quick replies | get `9/5`; set `9/6` `notification(12){quick_reply_list(5){list(1){text(1)}…}}` |
@@ -192,7 +193,7 @@ Notation: `type/id → field{subfield…}`. Example frames are real captures.
 
 | Command | Encoding |
 |---------|----------|
-| Now playing | `10/3` `music(13){player_info(1){1 state, 2 title, 3 player, 4 artist, 5 volume, 6 max volume, 7 duration s, 8 position s, 10 permission=1}}`. State: 2 playing, 3 paused, 4 stopped, 5 nothing playing. |
+| Now playing | `10/3` `music(13){player_info(1){1 state, 2 title, 5 volume, 6 max volume, 7 0, 8 0, 10 1}}` — exactly the fields NoiseFit sends (no player/artist; progress always 0). NoiseFit's states: 1 no notification access, 2 playing, otherwise 3 (paused) even with nothing playing. |
 | Watch control | watch → `10/1` `music(13){player_control_command(2)}` 1 play, 2 pause, 3 previous, 4 next, 5 vol+, 6 vol− |
 | Watch asks for state | watch → `10/0` |
 
@@ -241,8 +242,9 @@ boot loop (`00005212`), and a later session with unverified fields ended in a cr
 
 | Tier | Commands | Sent |
 |------|----------|------|
-| **Proven** | hello, user id, bind; device info `2/0`, battery `2/1`; time `3/0`; find watch `8/1`; live data `8/4`; notifications `9/2`, `9/3`, call state `9/4`, quick-reply list `9/5`; now playing `10/3`; fitness sync `11/136`, `11/138`, `11/139`; settings **GETs**; face list/select/remove/prepare `14/0,1,2,4` | Always |
-| **Experimental** | every settings SET, profile/units/temperature/language `4/x`, launcher `8/6–12`, find-phone stop `8/10`, quick-reply SET `9/6`, face support data `14/10`, face edit `14/11` | Only after the user enables *Experimental watch controls* |
+| **Proven** | hello, user id, bind; device info `2/0`, battery `2/1`; time `3/0`; find watch `8/1`; live data `8/4`; notifications `9/2`, `9/3`, call state `9/4`, quick-reply list `9/5`; now playing `10/3`; fitness sync `11/136`, `11/138`, `11/139` (daily and workouts); settings **GETs**; face list/select/remove/prepare `14/0,1,2,4` | Always |
+| **Echoed** | SETs for heart rate, SpO₂, stress, DND, raise to wake, the five reminders and alarms, built by editing the watch's own GET reply (`ProtoEdit`: every reported field is sent back, only the user's change differs, field-number order like the SDK) | Unless *Edit watch settings* is off |
+| **Experimental** | every other settings SET, profile/units/temperature/language `4/x`, launcher `8/6–12`, find-phone stop `8/10`, quick-reply SET `9/6`, face support data `14/10`, face edit `14/11` | Only after the user enables *Experimental watch controls* |
 
 "Proven" means the frame was captured from NoiseFit talking to this watch on firmware
 1.0.39, including a fresh pairing after a factory reset, or it is a read-only request
@@ -292,6 +294,24 @@ parser (`libberryParsing.so`) output recorded in its logs, and validated on 13 r
 
 Other function types (offline HR/SpO₂/temperature, ECG, GoMore algorithms, water) exist in
 the schema but were not observed on the NF 2.
+
+A watch restart zeroes its counters for the rest of the day. SilentFit keeps each daily record's last report
+and carries it over when a later report goes backwards (`FitnessDecoder.mergeDaily`).
+
+### Workouts (file type 7)
+
+Same flow, as NoiseFit runs it after every daily sync (the request is captured; the rest follows the SDK):
+
+| Step | Frame |
+|------|-------|
+| List | `11/138` `{58: {1: 7}}` → `{59: {2: {1 ids (7 bytes each), 2 {1 repeated record length}}}}`; an empty watch answers `DA 03 06 12 04 0A 00 12 00` |
+| Request | `11/136` `{56: {1: 7, 2: START, 3: total length, 5: ids}}` |
+| Data | `11 11 48 5A` header + `33 48 5A` chunks; 12-byte prefix, then records back to back with the listed lengths |
+| Done | watch `11/137` `{57: {1: 7, 2: SUCCESS}}`; optional delete `11/139` `{60: {1: 7, 3: {1 ids, 2 {1 lengths}}}}` |
+
+A record starts with its id: `u32 time, u8 timezone·4, u8 (bit 7 type high, bits 4–6 type mid, bits 0–3 version),
+u8 (bits 2–6 type low, bits 0–1 data type)`; data type 1 is the summary. Summary offsets per sport family and
+version are in `WorkoutDecoder` (from the SDK's `SportParsing`).
 
 ---
 

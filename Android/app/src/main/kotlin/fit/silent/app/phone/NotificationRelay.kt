@@ -82,15 +82,18 @@ class NotificationRelay : NotificationListenerService() {
     companion object {
         private const val TAG = "SilentFitRelay"
 
+        /**
+         * NoiseFit's states: 1 without notification access, 2 playing, otherwise 3 (paused) even when nothing is
+         * playing, so the watch keeps its play button active (5 "nothing playing" greys the controls out).
+         */
         fun publishMedia(phone: PhoneServices) {
             val controller = phone.mediaController
             val metadata = controller?.metadata
             val playback = controller?.playbackState
-            val state = when (playback?.state) {
-                PlaybackState.STATE_PLAYING, PlaybackState.STATE_BUFFERING -> WatchPlayback.PLAYING
-                PlaybackState.STATE_PAUSED -> WatchPlayback.PAUSED
-                PlaybackState.STATE_STOPPED -> WatchPlayback.STOPPED
-                else -> if (controller == null) WatchPlayback.NOTHING_PLAYING else WatchPlayback.PAUSED
+            val state = when {
+                !phone.notificationAccessGranted -> WatchPlayback.NO_PERMISSION
+                playback?.state == PlaybackState.STATE_PLAYING || playback?.state == PlaybackState.STATE_BUFFERING -> WatchPlayback.PLAYING
+                else -> WatchPlayback.PAUSED
             }
             val (volume, max) = phone.volume()
             phone.publish(

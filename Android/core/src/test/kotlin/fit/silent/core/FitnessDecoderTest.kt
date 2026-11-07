@@ -2,7 +2,9 @@ package fit.silent.core
 
 import fit.silent.core.fitness.DemoData
 import fit.silent.core.fitness.FitnessDecoder
+import fit.silent.core.model.DailyCounts
 import fit.silent.core.model.HealthDay
+import fit.silent.core.model.LiveData
 import fit.silent.core.protocol.BerryFrame
 import fit.silent.core.protocol.BerryStreamParser
 import fit.silent.core.protocol.ByteSink
@@ -52,5 +54,39 @@ class FitnessDecoderTest {
         assertEquals(32, units.last().payload.size)
         assertEquals(7, units.last().payload[12].toInt())
         assertTrue(units.first().kind == InboundKind.FILE_PROGRESS)
+    }
+
+    private fun report(vararg perHour: Int) = DailyCounts(perHour.sum(), perHour.sum() / 2, perHour.sum() / 20, perHour.toList(), perHour.map { it / 2 }, perHour.map { it / 20 })
+
+    @Test fun watchRestartKeepsEarlierSteps() {
+        var day = HealthDay("2026-11-07")
+        day = FitnessDecoder.mergeDaily(day, "00:00:00", report(100, 200, 300))
+        assertEquals(600, day.steps)
+        // The watch rebooted in hour 2: its record restarts at zero.
+        day = FitnessDecoder.mergeDaily(day, "00:00:00", report(0, 0, 40))
+        assertEquals(640, day.steps)
+        assertEquals(listOf(100, 200, 340), day.hourlySteps)
+        // Later reports of the restarted record replace only the post-restart part.
+        day = FitnessDecoder.mergeDaily(day, "00:00:00", report(0, 0, 90, 500))
+        assertEquals(1190, day.steps)
+        // A new record started after the restart adds up with the old one, and re-syncing both is stable.
+        day = FitnessDecoder.mergeDaily(day, "14:02:10", report(0, 0, 0, 0, 70))
+        day = FitnessDecoder.mergeDaily(day, "00:00:00", report(0, 0, 90, 500))
+        day = FitnessDecoder.mergeDaily(day, "14:02:10", report(0, 0, 0, 0, 70))
+        assertEquals(1260, day.steps)
+    }
+
+    @Test fun liveCountersAfterRestartAddToStoredDay() {
+        var day = FitnessDecoder.mergeDaily(HealthDay("d"), "00:00:00", report(100, 200))
+        assertEquals(450, day.withLive(LiveData(steps = 450)).steps)
+        assertEquals(330, day.withLive(LiveData(steps = 30)).steps)
+        day = day.copy()
+        assertEquals(300, day.withLive(LiveData(steps = 0)).steps)
+    }
+
+    @Test fun legacyDayIsCarriedWhenWatchRestarts() {
+        val legacy = HealthDay("d", steps = 5000, hourlySteps = List(24) { if (it == 9) 5000 else 0 })
+        val day = FitnessDecoder.mergeDaily(legacy, "00:00:00", report(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12))
+        assertEquals(5012, day.steps)
     }
 }
