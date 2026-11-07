@@ -1,5 +1,7 @@
 package fit.silent.app.ui.settings
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,13 +9,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -21,6 +27,8 @@ import fit.silent.app.BuildConfig
 import fit.silent.app.R
 import fit.silent.app.SilentFitApp
 import fit.silent.app.ui.LocalGraph
+import fit.silent.app.ui.components.AppLogo
+import fit.silent.app.ui.components.LogoState
 import fit.silent.app.ui.components.BackHeader
 import fit.silent.app.ui.components.ButtonStyle
 import fit.silent.app.ui.components.Card
@@ -127,9 +135,33 @@ fun SettingsScreen(nav: NavController) {
             Section("Support") {
                 NavRow("Connection log", icon = R.drawable.ic_scan_line) { nav.navigate("settings/log") }
                 NavRow("About & licences", value = BuildConfig.VERSION_NAME, icon = R.drawable.ic_info) { nav.navigate("settings/about") }
+                NavRow("Source code", subtitle = "github.com/Ebullioscopic/SilentFit", icon = R.drawable.ic_file_code) { graph.phone.openUrl(Links.SOURCE) }
+                NavRow("Developer", subtitle = "Hariharan Mudaliar", icon = R.drawable.ic_user) { graph.phone.openUrl(Links.DEVELOPER) }
+            }
+        }
+        item {
+            Section("Support the project") {
+                Txt("SilentFit is free and has no ads or tracking. If it is useful to you, you can buy the developer a coffee.", Nd.type.bodySm, color = Nd.colors.textSecondary)
+                Spacer(Modifier.height(Space.md))
+                BuyMeACoffee { graph.phone.openUrl(Links.COFFEE) }
             }
         }
     }
+}
+
+private object Links {
+    const val SOURCE = "https://github.com/Ebullioscopic/SilentFit"
+    const val DEVELOPER = "https://tinyurl.com/hariharanmudaliar"
+    const val COFFEE = "https://buymeacoffee.com/kryoscopic"
+}
+
+@Composable
+private fun BuyMeACoffee(onClick: () -> Unit) {
+    Image(
+        painterResource(if (Nd.colors.isDark) R.drawable.bmc_button_white else R.drawable.bmc_button_black),
+        contentDescription = "Buy me a coffee",
+        modifier = Modifier.height(48.dp).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = onClick),
+    )
 }
 
 @Composable
@@ -199,8 +231,10 @@ fun AboutScreen(nav: NavController) {
     FormPage {
         BackHeader("About", { nav.popBackStack() })
         Column(Modifier.padding(vertical = Space.xl)) {
+            AppLogo(LogoState.IDLE, size = 96.dp)
+            Spacer(Modifier.height(Space.lg))
             Txt("SilentFit", Nd.type.displayLg, color = Nd.colors.textDisplay)
-            Label("Version ${BuildConfig.VERSION_NAME}")
+            Label("Version ${BuildConfig.VERSION_NAME} · AGPL-3.0")
         }
         Txt(
             "An open, private companion for Noise watches. Everything stays on this phone: SilentFit has no internet permission, " +
@@ -218,6 +252,12 @@ fun AboutScreen(nav: NavController) {
         }
         Section("Licences") {
             Card {
+                Txt("SilentFit", Nd.type.bodySm, color = Nd.colors.textDisplay)
+                Txt("GNU Affero General Public License v3.0 or later © 2026 Hariharan Mudaliar", Nd.type.caption, color = Nd.colors.textSecondary)
+                Spacer(Modifier.height(Space.md))
+                Txt("AndroidX, CameraX, Kotlin, ZXing", Nd.type.bodySm, color = Nd.colors.textDisplay)
+                Txt("Apache License 2.0", Nd.type.caption, color = Nd.colors.textSecondary)
+                Spacer(Modifier.height(Space.md))
                 Txt("Doto, Space Grotesk, Space Mono", Nd.type.bodySm, color = Nd.colors.textDisplay)
                 Txt("SIL Open Font License 1.1 — fonts/OFL-*.txt", Nd.type.caption, color = Nd.colors.textSecondary)
                 Spacer(Modifier.height(Space.md))
@@ -227,6 +267,13 @@ fun AboutScreen(nav: NavController) {
                 Txt("Design language", Nd.type.bodySm, color = Nd.colors.textDisplay)
                 Txt("Inspired by Nothing's design system; not affiliated with Nothing or Noise.", Nd.type.caption, color = Nd.colors.textSecondary)
             }
+        }
+        Section("Trademarks") {
+            Txt(
+                "Noise, NoiseFit and related names, logos and software belong to their respective owners. SilentFit is an independent " +
+                    "project for interoperability with hardware you own. It is not affiliated with or endorsed by them and contains none of their code.",
+                Nd.type.bodySm, color = Nd.colors.textSecondary,
+            )
         }
     }
 }

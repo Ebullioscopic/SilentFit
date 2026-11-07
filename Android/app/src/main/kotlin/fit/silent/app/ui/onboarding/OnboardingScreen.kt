@@ -35,6 +35,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fit.silent.app.R
 import fit.silent.app.SilentFitApp
 import fit.silent.app.ui.LocalGraph
+import fit.silent.app.ui.components.AppLogo
+import fit.silent.app.ui.components.LogoState
 import fit.silent.app.ui.components.ButtonStyle
 import fit.silent.app.ui.components.Divider
 import fit.silent.app.ui.components.FormPage
@@ -144,8 +146,9 @@ fun OnboardingScreen(onDone: () -> Unit, pairOnly: Boolean = false) {
 @Composable
 private fun Welcome(onStart: () -> Unit, onDemo: () -> Unit) {
     val c = Nd.colors
-    Box(Modifier.fillMaxWidth().height(160.dp).padding(top = Space.xl).dotGrid(c.borderVisible, 14.dp, 1.5.dp))
     Spacer(Modifier.height(Space.xxl))
+    AppLogo(LogoState.IDLE, size = 120.dp)
+    Spacer(Modifier.height(Space.xl))
     Txt("SILENT", Nd.type.displayXl, color = c.textDisplay)
     Txt("FIT", Nd.type.displayXl, color = c.textDisplay)
     Spacer(Modifier.height(Space.lg))
@@ -331,7 +334,14 @@ private fun PairWatch(address: String, onConnected: () -> Unit, onRescan: () -> 
     val bondFailed = bond as? WatchBonding.Step.Failed
     val phase = connection.phase.takeIf { linkStarted }
     val linkFailed = phase == LinkPhase.FAILED
+    val error = bondFailed?.reason ?: connection.message.takeIf { linkFailed }
 
+    Spacer(Modifier.height(Space.xl))
+    AppLogo(when {
+        phase == LinkPhase.CONNECTED -> LogoState.CONNECTED
+        error != null -> LogoState.IDLE
+        else -> LogoState.LINKING
+    }, size = 72.dp)
     Title(name, address)
     Column {
         Divider()
@@ -371,7 +381,6 @@ private fun PairWatch(address: String, onConnected: () -> Unit, onRescan: () -> 
         )
     }
 
-    val error = bondFailed?.reason ?: connection.message.takeIf { linkFailed }
     if (error != null) {
         Spacer(Modifier.height(Space.lg))
         InlineStatus(error, color = c.accent)
@@ -403,6 +412,8 @@ private fun Ready(refresh: Int, onFinish: () -> Unit) {
     val settings by graph.settings.flow.collectAsStateWithLifecycle()
     val access = remember(refresh) { graph.phone.notificationAccessGranted }
     Spacer(Modifier.height(Space.xl))
+    AppLogo(LogoState.CONNECTED, size = 72.dp)
+    Spacer(Modifier.height(Space.lg))
     Txt("READY", Nd.type.displayLg, color = c.textDisplay)
     Spacer(Modifier.height(Space.sm))
     Txt("${settings.pairedWatch?.name ?: "Your watch"} is connected. Health data syncs in the background from now on.", Nd.type.body, color = c.textSecondary)

@@ -80,6 +80,7 @@ class PhoneServices(private val context: Context) {
     fun openNotificationAccess() = start(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
     fun openAppSettings() = start(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.fromParts("package", context.packageName, null)))
     fun openBluetoothSettings() = start(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+    fun openUrl(url: String) = start(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
 
     /** NoiseFit holds the same single data channel to the watch; both apps cannot be connected at once. */
     val noiseFitInstalled: Boolean get() = runCatching { context.packageManager.getApplicationInfo(NOISEFIT, 0).enabled }.getOrDefault(false)

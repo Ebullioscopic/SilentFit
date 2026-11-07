@@ -81,7 +81,7 @@ fun WatchScreen(nav: NavController) {
     val c = Nd.colors
 
     Page {
-        item { PageTitle(settings.pairedWatch?.name ?: "Watch", eyebrow = "Device") }
+        item { PageTitle(settings.pairedWatch?.name ?: "Watch", eyebrow = "Device") { fit.silent.app.ui.components.AppLogo(fit.silent.app.ui.components.watchLogoState(), size = 48.dp) } }
         if (settings.pairedWatch == null) {
             item {
                 EmptyState("No watch paired", "Scan the QR code on your watch, or pick one already paired with this phone.") {

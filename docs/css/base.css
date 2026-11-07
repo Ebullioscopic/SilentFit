@@ -271,3 +271,9 @@ ul, ol {
   white-space: nowrap;
   border-width: 0;
 }
+
+/* Brand mark: white dots on dark, black dots on light. */
+.brand-mark { display: inline-block; flex: none; }
+.brand-mark-light { display: none; }
+[data-theme="light"] .brand-mark-dark { display: none; }
+[data-theme="light"] .brand-mark-light { display: inline-block; }

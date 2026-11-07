@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/img/logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/img/logo-light.png">
+    <img src="docs/assets/img/logo-dark.png" width="160" alt="SilentFit logo">
+  </picture>
+</p>
+
 # SilentFit
 
 SilentFit is a companion app for Noise smartwatches that works without NoiseFit, an
@@ -147,12 +155,38 @@ Android/app/               Jetpack Compose app
   widget/                  Glance widgets
 Sources/                   Swift package and SwiftUI app (Apple platforms)
 Tools/                     Icon generation and helper scripts
-docs/                      Website and browser face editor, screenshots
+docs/                      Website and browser face editor, screenshots, logos
 markdowns/                 Documentation
+logos/                     Source artwork for the app's state logos
 ```
+
+## Support
+
+SilentFit is free, with no ads or tracking. If it is useful to you, you can support its
+development.
+
+<a href="https://buymeacoffee.com/kryoscopic">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/img/bmc-button-white.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/img/bmc-button-black.png">
+    <img src="docs/assets/img/bmc-button-black.png" height="48" alt="Buy me a coffee">
+  </picture>
+</a>
+
+<img src="docs/assets/img/qr-code.png" width="140" alt="QR code for buymeacoffee.com/kryoscopic">
+
+Built by [Hariharan Mudaliar](https://tinyurl.com/hariharanmudaliar).
+
+## Licence
+
+SilentFit is licensed under the [GNU Affero General Public License v3.0](LICENSE) or
+later. Third-party fonts, icons and libraries keep their own licences; see
+[COPYRIGHT](COPYRIGHT).
 
 ## Disclaimer
 
-SilentFit is an independent personal project for interoperability with hardware the
-author owns. It is not affiliated with or endorsed by Noise. No vendor code is included.
-Health readings are for general wellness, not medical use.
+Noise, NoiseFit and related names, logos and software are the property of their
+respective owners. SilentFit is an independent project for interoperability with
+hardware the author owns. It is not affiliated with or endorsed by Noise or Nothing, and
+it contains no code, firmware or assets from NoiseFit or Noise devices. Health readings
+are for general wellness, not medical use. The full notice is in [COPYRIGHT](COPYRIGHT).

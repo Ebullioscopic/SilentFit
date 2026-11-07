@@ -90,6 +90,8 @@ fun TodayScreen(nav: NavController) {
     Page {
         item {
             Row(Modifier.fillMaxWidth().padding(top = Space.xl, bottom = Space.md), verticalAlignment = Alignment.CenterVertically) {
+                fit.silent.app.ui.components.AppLogo(fit.silent.app.ui.components.watchLogoState(), size = 44.dp)
+                Spacer(Modifier.width(Space.md))
                 Column(Modifier.weight(1f)) {
                     Label(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE · d MMM", Locale.getDefault())))
                     Spacer(Modifier.height(Space.xs))

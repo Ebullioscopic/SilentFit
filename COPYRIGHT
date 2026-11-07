@@ -1,0 +1,61 @@
+SilentFit
+Copyright (C) 2026 Hariharan Mudaliar
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program (see LICENSE). If not, see <https://www.gnu.org/licenses/>.
+
+
+THIRD-PARTY MATERIAL
+--------------------
+
+The following are included under their own licences and are not covered by the
+AGPL grant above:
+
+  Doto, Space Grotesk, Space Mono    SIL Open Font License 1.1
+                                     (Android/app/src/main/assets/fonts/OFL-*.txt)
+  Lucide icons                       ISC License, (C) Lucide Contributors
+  AndroidX, CameraX, Kotlin          Apache License 2.0
+  ZXing                              Apache License 2.0
+  Buy Me a Coffee buttons and logo   Brand assets of Buy Me a Coffee, used to link
+                                     to the author's page as their guidelines allow
+
+
+TRADEMARKS AND DISCLAIMER
+-------------------------
+
+"Noise", "NoiseFit", "ColorFit", the NF 2 and all related product names, logos,
+firmware, software, protocols and documentation are the property of their
+respective owners. "Nothing" and its design language are the property of their
+respective owner. All other names and marks mentioned in this repository, its
+documentation, website and app belong to their respective owners.
+
+SilentFit is an independent, non-commercial project. It is not affiliated with,
+endorsed by, sponsored by or connected to Noise, Nothing or any other company
+named here. Such names are used only to describe what SilentFit is compatible
+with.
+
+SilentFit does not intend to infringe, and does not knowingly infringe, any
+copyright, trademark or other right of any party. The repository contains no
+code, firmware, images, watch faces or other files taken from NoiseFit or from
+any Noise device. The protocol notes describe observed behaviour, written
+independently for the purpose of interoperability with hardware the user owns.
+Anyone who believes material here infringes their rights is asked to open an
+issue at https://github.com/Ebullioscopic/SilentFit/issues, and it will be
+reviewed and removed where appropriate.
+
+Health readings shown by SilentFit come from the watch and are for general
+wellness only. They are not medical advice and must not be used for diagnosis
+or treatment.
+
+Using SilentFit with a watch is at your own risk. A malformed command or watch
+face can make a watch restart or require a factory reset; see the Watch safety
+section of README.md.

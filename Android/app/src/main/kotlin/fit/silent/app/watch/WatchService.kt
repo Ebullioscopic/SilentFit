@@ -63,9 +63,9 @@ class WatchService : LifecycleService() {
         lifecycleScope.launch {
             combine(graph.session.connection, graph.session.battery) { c, b ->
                 val battery = b?.let { " · ${it.level}%" }.orEmpty()
-                (if (c.isConnected) "Connected$battery" else c.message) to graph.settings.value.pairedWatch?.name
-            }.distinctUntilChanged().collect { (text, name) ->
-                getSystemService(android.app.NotificationManager::class.java).notify(NOTIFICATION_ID, notification(text, name))
+                Triple(if (c.isConnected) "Connected$battery" else c.message, graph.settings.value.pairedWatch?.name, c.phase)
+            }.distinctUntilChanged().collect { (text, name, phase) ->
+                getSystemService(android.app.NotificationManager::class.java).notify(NOTIFICATION_ID, notification(text, name, phase))
             }
         }
         lifecycleScope.launch {
@@ -92,16 +92,27 @@ class WatchService : LifecycleService() {
         super.onDestroy()
     }
 
+    private fun logo(phase: LinkPhase): android.graphics.Bitmap? {
+        val night = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val res = when (phase) {
+            LinkPhase.CONNECTED -> if (night) R.drawable.logo_pulse_dark else R.drawable.logo_pulse_light
+            LinkPhase.CONNECTING, LinkPhase.HANDSHAKE, LinkPhase.PAIRING -> if (night) R.drawable.logo_link_dark else R.drawable.logo_link_light
+            else -> if (night) R.drawable.logo_sf_dark else R.drawable.logo_sf_light
+        }
+        return android.graphics.BitmapFactory.decodeResource(resources, res)
+    }
+
     private fun startInForeground(n: Notification) {
         val type = if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE else 0
         ServiceCompat.startForeground(this, NOTIFICATION_ID, n, type)
     }
 
-    private fun notification(text: String, watchName: String?): Notification {
+    private fun notification(text: String, watchName: String?, phase: LinkPhase = LinkPhase.CONNECTING): Notification {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, WatchService::class.java).setAction(ACTION_DISCONNECT), PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, PhoneServices.CHANNEL_LINK)
             .setSmallIcon(R.drawable.ic_watch)
+            .setLargeIcon(logo(phase))
             .setContentTitle(watchName ?: getString(R.string.app_name))
             .setContentText(text)
             .setOngoing(true)
