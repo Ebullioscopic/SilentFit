@@ -180,8 +180,9 @@ class WatchSession(
     private var sportIds: SportIds? = null
     private var syncingSport = false
     private var connectedAt = 0L
-    /** Consecutive links that another app took over within seconds (NoiseFit holds the same channel). */
+    /** Data-link drops (with the watch still connected) in the last few minutes — NoiseFit holds the same channel. */
     private var stolenLinks = 0
+    private val stolenAt = ArrayList<Long>()
     private var aclLostAt = 0L
     private val _conflict = MutableStateFlow(false)
     /** True when another companion app keeps taking the watch's data channel. */
@@ -215,9 +216,9 @@ class WatchSession(
     fun connect() = scope.launch {
         val target = prefs.pairedWatch ?: return@launch
         if (_connection.value.isBusy || isConnected) return@launch
+        // While another app holds the watch, only "Try again" (retryAfterConflict) reconnects; this runs on every app start.
+        if (_conflict.value) return@launch
         userDisconnected = false
-        stolenLinks = 0
-        _conflict.value = false
         open(target)
     }
 
@@ -377,18 +378,21 @@ class WatchSession(
      */
     private fun noteDrop() {
         val now = System.currentTimeMillis()
-        val lasted = now - connectedAt
-        val watchStillThere = now - aclLostAt > 5_000
-        stolenLinks = if (lasted < STOLEN_LINK_MS && watchStillThere) stolenLinks + 1 else 0
+        // The watch itself going away also drops the Bluetooth link; another app connecting leaves it up.
+        if (now - aclLostAt < 5_000) return
+        stolenAt.add(now)
+        stolenAt.removeAll { now - it > CONFLICT_WINDOW_MS }
+        stolenLinks = stolenAt.size
         if (stolenLinks >= 3 && !_conflict.value) {
             _conflict.value = true
-            log("link taken over $stolenLinks times in a row: another app${if (phone.noiseFitInstalled) " (NoiseFit)" else ""} is connected")
+            log("data link dropped $stolenLinks times in ${CONFLICT_WINDOW_MS / 60_000} min with the watch still connected: another app${if (phone.noiseFitInstalled) " (NoiseFit)" else ""} is connecting")
         }
     }
 
     /** User dismissed the conflict (e.g. after disabling NoiseFit): reconnect normally. */
     fun retryAfterConflict() = scope.launch {
         stolenLinks = 0
+        stolenAt.clear()
         _conflict.value = false
         attempts = 0
         if (!isConnected && !_connection.value.isBusy) prefs.pairedWatch?.let { userDisconnected = false; open(it) }
@@ -1095,8 +1099,8 @@ class WatchSession(
         private val BACKOFF = intArrayOf(5, 10, 20, 40, 60, 120, 300)
         private val STAMP = DateTimeFormatter.ofPattern("HH:mm:ss")
         private val FILE_STAMP = DateTimeFormatter.ofPattern("MM-dd HH:mm:ss")
-        /** A link that another app takes over dies within seconds of opening. */
-        private const val STOLEN_LINK_MS = 45_000L
+        /** Three data-link drops with the watch still connected within this window mean another app is connecting. */
+        private const val CONFLICT_WINDOW_MS = 10 * 60_000L
         private const val CONFLICT_RETRY_SECONDS = 600
         /** GET id → setting_menu field of settings whose writes edit the watch's reply. */
         private val ECHO_FIELDS = mapOf(

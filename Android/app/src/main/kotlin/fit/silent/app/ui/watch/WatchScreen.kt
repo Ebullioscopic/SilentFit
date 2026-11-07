@@ -53,7 +53,11 @@ fun ConflictCard() {
         Spacer(Modifier.height(Space.sm))
         Txt(
             "Your watch has one data connection, and the other app keeps taking it, so both apps drop every few seconds. " +
-                if (noiseFit) "Force stop NoiseFit (or disable it) while you use SilentFit, then tap Try again." else "Close the other app, then tap Try again.",
+                if (noiseFit) {
+                    "Force stop alone does not last: NoiseFit restarts itself. In NoiseFit's App info set Battery to Restricted and turn off its notification access (or uninstall it), then tap Try again."
+                } else {
+                    "Close the other app, then tap Try again."
+                },
             Nd.type.bodySm, color = Nd.colors.textSecondary,
         )
         Spacer(Modifier.height(Space.md))
