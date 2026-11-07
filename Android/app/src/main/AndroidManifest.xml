@@ -20,6 +20,8 @@
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+    <!-- Only to read the pairing QR code on the watch. Frames are decoded on-device and never stored. -->
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <queries>
         <!-- NoiseFit competes for the watch's data channel; SilentFit detects it to explain disconnects. -->
@@ -31,6 +33,7 @@
 
     <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
     <application
         android:name=".SilentFitApp"

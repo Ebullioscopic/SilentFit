@@ -459,7 +459,8 @@ fun BarChart(values: List<Int>, modifier: Modifier = Modifier, height: Dp = 120.
             drawLine(c.border, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1.dp.toPx())
             values.forEachIndexed { i, v ->
                 val h = if (v <= 0) 0f else (v.toFloat() / max * size.height).coerceAtLeast(2.dp.toPx())
-                val col = if (i == highlight) c.accent else color
+                // The highlighted bar (now / today) is full brightness; the rest step back. Red stays reserved for alerts.
+                val col = if (highlight < 0 || i == highlight) color else c.textDisabled
                 drawRect(col, Offset(i * (w + gap), size.height - h), Size(w, h))
             }
         }

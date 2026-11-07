@@ -101,7 +101,7 @@ fun TrendsScreen(nav: NavController) {
                     val avg = if (present.isEmpty()) 0 else present.sum() / present.size
                     Section(metric.title, trailing = { Txt("AVG ${metric.display(avg)}", Nd.type.label, color = Nd.colors.textSecondary) }) {
                         Box(Modifier.fillMaxWidth().semantics { contentDescription = "${metric.title}, ${period.label} average ${metric.display(avg)}" }) {
-                            BarChart(values, height = 64.dp, highlight = values.lastIndex, color = Nd.colors.textPrimary, axis = false)
+                            BarChart(values, height = 64.dp, highlight = values.lastIndex, axis = false)
                         }
                         StatRow("Today", metric.display(values.last()), unit = metric.unit.takeIf { metric != Metric.SLEEP }, onClick = { nav.navigate(Routes.trend(metric.key)) })
                     }

@@ -1,96 +1,154 @@
 # SilentFit
 
-A private, account-free companion app for **Noise smartwatches**. The Android app is
-native **Kotlin + Jetpack Compose** in the Nothing design language; the Apple apps
-(iOS, iPadOS, macOS) are **SwiftUI** from the shared Swift package.
+SilentFit is a companion app for Noise smartwatches that works without NoiseFit, an
+account or the internet. It talks to the watch over Bluetooth using the watch's own
+protocol (Berry). Health data is stored on the phone and nowhere else. The app has no
+network permission.
 
-SilentFit speaks the watch's native **Berry** protocol directly — no NoiseFit, no cloud,
-no sign-in, and no network permission. Health data stays on your device.
+The Android app is native Kotlin and Jetpack Compose. The Apple apps (macOS, iOS,
+iPadOS) are SwiftUI, built from the Swift package in this repository.
 
-## Features
+<table>
+  <tr>
+    <td><img src="docs/assets/screenshots/welcome.png" width="200" alt="Welcome"></td>
+    <td><img src="docs/assets/screenshots/find.png" width="200" alt="Find your watch"></td>
+    <td><img src="docs/assets/screenshots/today.png" width="200" alt="Today"></td>
+    <td><img src="docs/assets/screenshots/trends.png" width="200" alt="Trends"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/screenshots/faces.png" width="200" alt="Faces"></td>
+    <td><img src="docs/assets/screenshots/editor.png" width="200" alt="Face editor"></td>
+    <td><img src="docs/assets/screenshots/watch.png" width="200" alt="Watch"></td>
+    <td><img src="docs/assets/screenshots/permissions.png" width="200" alt="Permissions"></td>
+  </tr>
+</table>
 
-| | |
-|---|---|
-| **Health** | Steps, distance, calories, active minutes, stand hours, continuous heart rate, sleep stages & score, SpO₂, stress — synced from the watch and kept as local history |
-| **Dashboard** | Activity rings, metric tiles, hourly charts, weekly/monthly trends, per-day detail |
-| **Notifications** | App notifications, incoming/missed calls and SMS forwarded to the watch (Android) |
-| **Calls** | Answer, decline or mute from the watch; quick replies by SMS (Android) |
-| **Music** | Now-playing on the watch; play/pause/skip/volume control any player (Android) |
-| **Watch** | Find My Watch, Find My Phone, time sync, live steps/heart rate, watch settings (read; changing them is opt-in, see below) |
-| **Face studio** | Drag-and-drop editor, JSON code files, `.sfface` import/export, Nothing-style presets (17 analogue, 16 digital, all tuned for legibility on the LCD), safe install with automatic rollback (Android) |
-| **Widgets** | Today (dot-matrix steps, goal segments, heart rate, sleep, kcal) and Watch (battery, connection) home-screen widgets (Android) |
-| **Reliability** | Auto-reconnect with backoff, low-priority foreground service, connection log |
-| **Safety** | Only commands observed from the official app are sent by default; faces are checked against the official layout before upload |
+Screenshots are from demo mode, which uses simulated data.
 
-Tested against a Noise **NF 2** (ZH Berry firmware 1.0.39). Other Berry-protocol Noise
-watches may work for sync and notifications; see [docs/REVERSE_ENGINEERING.md](docs/REVERSE_ENGINEERING.md#8-adding-another-noise-model).
-The command allowlist and face rules were derived on the NF 2 only.
+## Download
 
-## Platform support
+Get the APK from [Releases](https://github.com/Ebullioscopic/SilentFit/releases/latest).
+It needs Android 10 or later. The release is signed with the project's own key, so it
+cannot update a debug build you compiled yourself. Uninstall that one first.
+
+## Compatibility
+
+Tested on a Noise NF 2 (model 59004, firmware 1.0.39) with a phone on Android 16. Other
+Noise watches that use the Berry protocol may sync and receive notifications, but the
+command allowlist and the face rules were worked out on the NF 2 only. See
+[Adding another Noise model](markdowns/REVERSE_ENGINEERING.md#8-adding-another-noise-model).
 
 | | Android | macOS | iPhone / iPad |
-|---|:---:|:---:|:---:|
-| NF 2 (Bluetooth Classic) | ✅ | ✅ | ❌ (iOS limitation) |
-| Berry BLE devices | — | — | ✅ experimental |
-| Notifications, calls, music | ✅ | — | — |
+|---|---|---|---|
+| NF 2 (Bluetooth Classic) | Yes | Yes | No. iOS does not allow Bluetooth Classic serial |
+| Berry BLE watches | No | No | Experimental |
+| Notifications, calls, music | Yes | No | No |
 
-Details and the reasoning are in [docs/PLATFORM_MAP.md](docs/PLATFORM_MAP.md).
+The reasoning is in [Platform map](markdowns/PLATFORM_MAP.md).
+
+## What it does (Android)
+
+**Setup.** Scan the QR code on the watch. SilentFit reads its Bluetooth address, pairs
+with it and walks you through the confirmation on the watch. A watch already paired
+with the phone can be picked from a list instead.
+
+**Health.** Steps, distance, calories, active minutes, standing hours, heart rate
+through the day, sleep stages, SpO₂ and stress. Data is synced from the watch in the
+background and kept as daily history. If the watch restarts during the day, its
+counters start again from zero; SilentFit keeps what was already synced and adds to it.
+
+**Workouts.** Workouts recorded on the watch are downloaded after each sync. This is new
+and has been checked against the file format, not yet against many real workouts.
+
+**Notifications and calls.** App notifications are forwarded with the app's own icon on
+the watch for about 40 common apps; others show as a generic message with the app name.
+Calls can be answered or declined from the watch, and SMS quick replies are sent from
+the phone.
+
+**Music.** The watch's music screen shows the current track and controls whatever is
+playing on the phone.
+
+**Watch settings.** Heart-rate, SpO₂ and stress monitoring, do-not-disturb, raise to
+wake, reminders and alarms can be changed. Each change is read back from the watch to
+confirm it. Settings that cannot be confirmed this way are shown read-only. Alarms can
+also be copied to the phone's clock app.
+
+**Faces.** A face editor with presets, a JSON format for hand-written faces, and import
+of `.sfface` files and compiled faces. A [web version](docs/README.md) of the editor
+runs in the browser and exports files the app can install.
+
+**Widgets.** A Today widget (steps, goal, heart rate, sleep, calories) and a Watch
+widget (battery and connection).
+
+## Using it alongside NoiseFit
+
+The watch accepts one app on its data connection. If NoiseFit is installed it will keep
+trying to reconnect. When that happens SilentFit stops retrying and shows *Another app
+is using your watch*. Either uninstall NoiseFit or set its battery usage to
+*Restricted*. Your NoiseFit account ID can be entered during setup to keep the watch's
+existing pairing; see the [User guide](markdowns/USER_GUIDE.md).
+
+## Watch safety
+
+The NF 2 firmware does not check what it receives. A malformed face once left a test
+watch restarting in a loop until it was factory reset. For that reason SilentFit:
+
+* only sends commands that were captured from NoiseFit on this watch, or read-only
+  requests. Writes to watch settings are limited to ones the watch reports back, and
+  each is checked after it is sent
+* only installs faces whose every record matches the layout of an official face
+* asks before installing a face, and switches back to the previous face if the watch
+  drops off Bluetooth within three minutes of the new one being applied
 
 ## Documentation
 
 | Document | Contents |
 |----------|----------|
-| [User Guide](docs/USER_GUIDE.md) | Setup, switching from NoiseFit, everyday use, troubleshooting |
-| [Designing Watch Faces](docs/WATCHFACE_DESIGN.md) | Face studio, presets, the `.sfface.json` code format |
-| [Watch-Face Format](docs/WATCHFACE_FORMAT.md) | WF container, PAR image codec, data ids, install flow, safety rules |
-| [Designer Handoff](docs/HANDOFF_WATCHFACE_DESIGNER.md) | Everything needed to build a web/desktop face designer: model, rendering, compiler, safety, UX, style guide |
-| [Platform Map](docs/PLATFORM_MAP.md) | Architecture, per-platform capabilities, battery strategy, build commands |
-| [Berry Protocol](docs/PROTOCOL.md) | Transport, framing, handshake, every command, command safety policy, health-sync flow |
-| [NoiseFit Analysis](docs/NOISEFIT_ANALYSIS.md) | What's inside the NoiseFit APK and how it is structured |
-| [Reverse Engineering](docs/REVERSE_ENGINEERING.md) | Reproducible methodology and tooling |
-
-## Watch safety
-
-The NF 2 firmware does not validate what it receives; a malformed face once left a test
-watch boot-looping until a factory reset. SilentFit therefore:
-
-* sends only commands captured from NoiseFit on this watch (or read-only requests proven
-  safe) — changing watch settings is behind **Settings › Experimental watch controls**
-* accepts only faces whose every record matches the official face layout
-* asks before installing, and rolls a new face back automatically if the watch
-  disconnects within 3 minutes
+| [User guide](markdowns/USER_GUIDE.md) | Setup, moving from NoiseFit, everyday use, troubleshooting |
+| [Designing watch faces](markdowns/WATCHFACE_DESIGN.md) | The face editor, presets and the `.sfface.json` format |
+| [Watch-face format](markdowns/WATCHFACE_FORMAT.md) | WF container, PAR image codec, data ids, install flow, safety rules |
+| [Designer handoff](markdowns/HANDOFF_WATCHFACE_DESIGNER.md) | Model, rendering, compiler and safety rules behind the web editor |
+| [Platform map](markdowns/PLATFORM_MAP.md) | Architecture, per-platform features, battery use |
+| [Berry protocol](markdowns/PROTOCOL.md) | Transport, framing, handshake, commands, safety policy, sync |
+| [NoiseFit analysis](markdowns/NOISEFIT_ANALYSIS.md) | How the NoiseFit app is put together |
+| [Reverse engineering](markdowns/REVERSE_ENGINEERING.md) | Method and tools |
 
 ## Building
 
-Requirements: JDK 17+, Android SDK, Gradle 9 (`brew install gradle`); Xcode for Apple.
+Requires JDK 17 or later, the Android SDK and Gradle 9 (`brew install gradle`). Xcode
+for the Apple apps.
 
 ```bash
 cd Android
-gradle :core:test :app:assembleDebug           # protocol, face codec & safety tests + APK
+gradle :core:test :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 
-swift test                                       # Swift package tests (Apple)
-open Project.xcworkspace                         # iOS / iPadOS / macOS (scheme "SilentFit App")
+swift test                    # Swift package tests
+open Project.xcworkspace      # Apple apps, scheme "SilentFit App"
 ```
 
+`gradle :app:assembleRelease` signs with `Android/app/keystore.properties` when that
+file exists (it is not in the repository) and with the debug key otherwise.
+
 Set `SILENTFIT_FACE_SAMPLE=/path/to/official-face.bin` to also run the byte-exact codec
-regression against an official face (not included in the repository).
+test against an official face. Official faces are not included.
 
 ## Project layout
 
 ```
 Android/core/              Pure Kotlin/JVM library, unit-tested
   protocol/                Framing, protobuf codec, commands, command policy, responses
-  fitness/                 Health record decoder
+  fitness/                 Health and workout record decoders
   watchface/               PAR codec, WF container, FaceSpec, compiler, FaceSafety
 Android/app/               Jetpack Compose app
-  watch/                   SPP link, WatchSession (handshake, sync, uploads, face trial), service
+  watch/                   SPP link, bonding, WatchSession (handshake, sync, uploads, face trial), service
   facestudio/              Canvas rasterizer, presets
-  ui/                      Today, Trends, Faces (studio + code), Watch, Settings
+  ui/                      Setup, Today, Trends, Faces (studio + code), Watch, Settings
   widget/                  Glance widgets
 Sources/                   Swift package and SwiftUI app (Apple platforms)
 Tools/                     Icon generation and helper scripts
-docs/                      Documentation
+docs/                      Website and browser face editor, screenshots
+markdowns/                 Documentation
 ```
 
 ## Disclaimer

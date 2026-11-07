@@ -158,7 +158,7 @@ fun FacesScreen(nav: NavController) {
                         Modifier.fillMaxWidth().clickable(role = Role.Button, enabled = !f.isCurrent) { graph.session.setFace(f.id) }.padding(vertical = Space.md),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        StatusDot(if (f.isCurrent) c.accent else c.borderVisible)
+                        StatusDot(if (f.isCurrent) c.textDisplay else c.borderVisible)
                         Spacer(Modifier.width(Space.md))
                         Column(Modifier.weight(1f)) {
                             Txt(f.name, Nd.type.body, maxLines = 1)
@@ -260,7 +260,7 @@ private fun DesignGrid(
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
-                    .border(if (isSelected) 2.dp else 0.dp, if (isSelected) c.accent else Color.Transparent, RoundedCornerShape(12.dp))
+                    .border(if (isSelected) 2.dp else 0.dp, if (isSelected) c.textDisplay else Color.Transparent, RoundedCornerShape(12.dp))
                     .combinedClickable(
                         role = Role.Button,
                         onClickLabel = "Open",
@@ -273,7 +273,7 @@ private fun DesignGrid(
                 FacePreview(doc.spec, Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Space.sm))
                 Txt(doc.spec.name, Nd.type.bodySm, maxLines = 1)
-                Label(if (isSelected) "Selected" else caption(doc), color = if (isSelected) c.accent else c.textDisabled)
+                Label(if (isSelected) "Selected" else caption(doc), color = if (isSelected) c.textDisplay else c.textDisabled)
             }
         }
         if (docs.size % 2 == 1) Spacer(Modifier.weight(1f))

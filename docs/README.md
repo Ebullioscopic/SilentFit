@@ -1,7 +1,7 @@
 # SilentFit website and Studio
 
-Static site (no build step). Run locally: `cd website && python3 -m http.server 8765`, then open `/designer/index.html`.
-Deploy: publish the `website/` folder with GitHub Pages.
+Static site (no build step). Run locally: `cd docs && python3 -m http.server 8765`, then open `/designer/index.html`.
+Deploy: publish the `docs/` folder with GitHub Pages.
 
 - `js/core.js`: port of the app's binding table, PAR codec, WF writer, compiler and FaceSafety.
 - `js/renderer.js`: port of `AndroidFaceRasterizer`, so the preview matches the watch.

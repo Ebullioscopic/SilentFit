@@ -2,23 +2,32 @@
 
 ## Before you start (Android)
 
-1. **Your watch must already be paired** in Android *Settings › Connected devices*. It
-   appears as something like `NF 2_A1B2`.
-2. **Close NoiseFit.** Only one app can hold the watch's data channel. Either uninstall
-   NoiseFit or force-stop it (*Settings › Apps › NoiseFit › Force stop*) and disable its
-   background activity.
-3. Install SilentFit and open it.
+1. **Stop NoiseFit.** The watch accepts one app on its data channel. Uninstall NoiseFit,
+   or force-stop it and set its battery usage to *Restricted*
+   (*Settings › Apps › NoiseFit › App battery usage*). If NoiseFit keeps taking the
+   watch, SilentFit pauses and shows *Another app is using your watch*.
+2. Install SilentFit and open it.
 
 ## First launch
 
-1. On the welcome screen tap **Continue** (or **Try demo** to explore with a simulated
-   watch).
-2. Under **Choose your watch**, tap **Allow** for Nearby devices (Bluetooth) and
-   notifications, then pick your watch from *Paired devices*. Optionally enter your
-   NoiseFit account ID (see below) to keep the existing pairing.
-3. Turn on SilentFit under Android's *Notification access* (Settings › Permissions in the
-   app links there). This powers notification forwarding, caller info and music control.
-   Grant **Phone** and **SMS** if you want to answer calls and send quick replies.
+Setup has four steps.
+
+1. **Welcome.** Tap **Set up watch**, or **Try demo** to explore with a simulated watch.
+2. **Permissions.** Tap **Allow**. *Nearby devices* is required; *Notifications* and
+   *Phone and SMS* can be granted later.
+3. **Find your watch.** Open the QR code screen on the watch and tap **Scan QR code**.
+   SilentFit reads the watch's Bluetooth address from the code, then searches for the
+   watch and asks Android to pair with it. Accept the pairing request on the phone.
+   The camera is only used for this; frames are decoded on the phone and not stored.
+   If the watch is already paired with the phone, pick it under *Already paired*
+   instead.
+4. **Confirm on the watch.** A fresh watch asks you to confirm the new phone; tap the
+   check mark. When the three stages show *Done*, setup finishes.
+
+Afterwards, allow **Notification access** when asked. It powers notification forwarding,
+caller names and music control.
+
+To pair a different watch later: **Watch › Forget**, then **Set up watch**.
 
 ## Switching from NoiseFit without resetting the watch
 

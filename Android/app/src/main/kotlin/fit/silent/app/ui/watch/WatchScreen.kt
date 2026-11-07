@@ -84,8 +84,8 @@ fun WatchScreen(nav: NavController) {
         item { PageTitle(settings.pairedWatch?.name ?: "Watch", eyebrow = "Device") }
         if (settings.pairedWatch == null) {
             item {
-                EmptyState("No watch paired", "Pair your Noise watch in Android Bluetooth settings, then choose it here.") {
-                    NdButton("Choose watch", { nav.navigate("pair") }, icon = R.drawable.ic_bluetooth)
+                EmptyState("No watch paired", "Scan the QR code on your watch, or pick one already paired with this phone.") {
+                    NdButton("Set up watch", { nav.navigate("pair") }, icon = R.drawable.ic_scan_line)
                 }
             }
             return@Page
