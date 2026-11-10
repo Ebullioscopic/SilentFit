@@ -35,6 +35,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fit.silent.app.R
 import fit.silent.app.SilentFitApp
 import fit.silent.app.ui.LocalGraph
+import fit.silent.app.BuildConfig
+import fit.silent.app.ui.components.NotificationAccessDisclosure
 import fit.silent.app.ui.components.AppLogo
 import fit.silent.app.ui.components.LogoState
 import fit.silent.app.ui.components.ButtonStyle
@@ -165,6 +167,21 @@ private fun Welcome(onStart: () -> Unit, onDemo: () -> Unit) {
         NdButton("Set up watch", onStart)
         NdButton("Try demo", onDemo, style = ButtonStyle.GHOST)
     }
+    Spacer(Modifier.height(Space.xl))
+    Txt(
+        "Health readings are for general wellness and are not medical advice. By continuing you agree to the terms of use.",
+        Nd.type.caption, Modifier.widthIn(max = 340.dp), color = c.textDisabled,
+    )
+    LegalLinks()
+}
+
+@Composable
+private fun LegalLinks() {
+    val graph = LocalGraph.current
+    Row(horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
+        NdButton("Privacy policy", { graph.phone.openUrl(BuildConfig.PRIVACY_URL) }, style = ButtonStyle.GHOST)
+        NdButton("Terms of use", { graph.phone.openUrl(BuildConfig.TERMS_URL) }, style = ButtonStyle.GHOST)
+    }
 }
 
 @Composable
@@ -181,7 +198,12 @@ private fun Permissions(refresh: Int, onAllow: () -> Unit, onNext: () -> Unit) {
         Divider()
         PermissionRow(R.drawable.ic_bluetooth, "Nearby devices", "Find, pair and stay connected to the watch", bluetooth)
         PermissionRow(R.drawable.ic_bell, "Notifications", "Connection status and find-my-phone", notifications)
-        PermissionRow(R.drawable.ic_phone, "Phone and SMS", "Answer calls and send quick replies from the watch", calls)
+        PermissionRow(
+            R.drawable.ic_phone,
+            if (BuildConfig.SMS_REPLIES) "Phone and SMS" else "Phone",
+            if (BuildConfig.SMS_REPLIES) "Answer calls and send quick replies from the watch" else "Answer or decline calls from the watch",
+            calls,
+        )
     }
     Spacer(Modifier.height(Space.xl))
     Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
@@ -418,15 +440,13 @@ private fun Ready(refresh: Int, onFinish: () -> Unit) {
     Spacer(Modifier.height(Space.sm))
     Txt("${settings.pairedWatch?.name ?: "Your watch"} is connected. Health data syncs in the background from now on.", Nd.type.body, color = c.textSecondary)
     Section("Recommended") {
-        Row(Modifier.fillMaxWidth().padding(vertical = Space.md), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Txt("Notification access", Nd.type.body)
-                Txt("Show app notifications and music on the watch", Nd.type.bodySm, color = c.textSecondary)
+        if (access) {
+            Row(Modifier.fillMaxWidth().padding(vertical = Space.md), verticalAlignment = Alignment.CenterVertically) {
+                Txt("Notification access", Nd.type.body, Modifier.weight(1f))
+                Label("On", color = c.textPrimary)
             }
-            Spacer(Modifier.width(Space.md))
-            if (access) Label("On", color = c.textPrimary) else NdButton("Allow", { graph.phone.openNotificationAccess() }, style = ButtonStyle.SECONDARY)
-        }
-        Divider()
+            Divider()
+        } else NotificationAccessDisclosure()
     }
     Spacer(Modifier.height(Space.xl))
     NdButton("Open SilentFit", onFinish)

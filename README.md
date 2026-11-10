@@ -39,6 +39,9 @@ Get the APK from [Releases](https://github.com/Ebullioscopic/SilentFit/releases/
 It needs Android 10 or later. The release is signed with the project's own key, so it
 cannot update a debug build you compiled yourself. Uninstall that one first.
 
+A Google Play version is being prepared. It is the same app without SMS quick replies,
+because Google Play restricts the SMS permission.
+
 ## Compatibility
 
 Tested on a Noise NF 2 (model 59004, firmware 1.0.39) with a phone on Android 16. Other
@@ -128,14 +131,18 @@ for the Apple apps.
 
 ```bash
 cd Android
-gradle :core:test :app:assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+gradle :core:test :app:assembleGithubDebug
+adb install -r app/build/outputs/apk/github/debug/app-github-debug.apk
 
 swift test                    # Swift package tests
 open Project.xcworkspace      # Apple apps, scheme "SilentFit App"
 ```
 
-`gradle :app:assembleRelease` signs with `Android/app/keystore.properties` when that
+There are two flavours. `github` is the APK on GitHub Releases. `play` is the Google Play
+build (`gradle :app:bundlePlayRelease`), which leaves out the `SEND_SMS` permission and
+with it SMS quick replies. See [store/PLAY_CONSOLE.md](store/PLAY_CONSOLE.md).
+
+Release builds sign with `Android/app/keystore.properties` when that
 file exists (it is not in the repository) and with the debug key otherwise.
 
 Set `SILENTFIT_FACE_SAMPLE=/path/to/official-face.bin` to also run the byte-exact codec
@@ -181,7 +188,10 @@ Built by [Hariharan Mudaliar](https://tinyurl.com/hariharanmudaliar).
 
 SilentFit is licensed under the [GNU Affero General Public License v3.0](LICENSE) or
 later. Third-party fonts, icons and libraries keep their own licences; see
-[COPYRIGHT](COPYRIGHT).
+[COPYRIGHT](COPYRIGHT). Use of the app and website is covered by the
+[terms of use](https://ebullioscopic.github.io/SilentFit/terms.html) and the
+[privacy policy](https://ebullioscopic.github.io/SilentFit/privacy.html). In short,
+SilentFit collects no data.
 
 ## Disclaimer
 

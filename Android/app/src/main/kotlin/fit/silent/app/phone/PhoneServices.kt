@@ -23,6 +23,7 @@ import android.provider.Settings
 import android.provider.Telephony
 import android.telecom.TelecomManager
 import android.telephony.SmsManager
+import fit.silent.app.BuildConfig
 import android.util.Log
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
@@ -62,7 +63,7 @@ class PhoneServices(private val context: Context) {
         if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
         add(Manifest.permission.ANSWER_PHONE_CALLS)
         add(Manifest.permission.READ_PHONE_STATE)
-        add(Manifest.permission.SEND_SMS)
+        if (BuildConfig.SMS_REPLIES) add(Manifest.permission.SEND_SMS)
     }
 
     fun has(permission: String) = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED

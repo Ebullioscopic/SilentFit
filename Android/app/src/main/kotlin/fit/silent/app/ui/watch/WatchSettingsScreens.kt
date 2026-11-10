@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import fit.silent.app.R
+import fit.silent.app.ui.components.NotificationAccessDisclosure
 import fit.silent.app.ui.LocalGraph
 import fit.silent.app.ui.components.BackHeader
 import fit.silent.app.ui.components.ButtonStyle
@@ -361,7 +362,13 @@ fun QuickRepliesScreen(nav: NavController) {
     Page {
         item { BackHeader("Quick replies", { nav.popBackStack() }) }
         item { ExperimentalNotice() }
-        item { Txt("Send these as SMS replies to calls and messages straight from your watch.", Nd.type.bodySm, Modifier.padding(bottom = Space.md), Nd.colors.textSecondary) }
+        item {
+            Txt(
+                if (fit.silent.app.BuildConfig.SMS_REPLIES) "Send these as SMS replies to calls and messages straight from your watch."
+                else "These replies are stored on the watch. Sending them as SMS is only available in the GitHub build, because Google Play restricts SMS access.",
+                Nd.type.bodySm, Modifier.padding(bottom = Space.md), Nd.colors.textSecondary,
+            )
+        }
         replies.forEachIndexed { i, r ->
             item("r$i") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -394,13 +401,7 @@ fun NotificationsScreen(nav: NavController) {
     }
     Page {
         item { BackHeader("Notifications", { nav.popBackStack() }) }
-        if (!access) item {
-            Card(Modifier.padding(bottom = Space.md)) {
-                Txt("Allow notification access so SilentFit can mirror alerts to your watch.", Nd.type.bodySm)
-                Spacer(Modifier.height(Space.md))
-                NdButton("Open settings", { graph.phone.openNotificationAccess() })
-            }
-        }
+        if (!access) item { NotificationAccessDisclosure(Modifier.padding(bottom = Space.md)) }
         item {
             Section("Forward") {
                 SwitchRow("App notifications", settings.forwardNotifications, { v -> graph.settings.update { it.copy(forwardNotifications = v) } })

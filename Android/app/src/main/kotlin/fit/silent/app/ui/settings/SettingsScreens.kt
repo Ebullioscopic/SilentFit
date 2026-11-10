@@ -58,6 +58,7 @@ fun SettingsScreen(nav: NavController) {
     val context = LocalContext.current
     val settings by graph.settings.flow.collectAsStateWithLifecycle()
     var confirmClear by remember { mutableStateOf(false) }
+    var confirmDeleteAll by remember { mutableStateOf(false) }
     var confirmExperimental by remember { mutableStateOf(false) }
     val missing = graph.phone.missingPermissions()
 
@@ -92,7 +93,7 @@ fun SettingsScreen(nav: NavController) {
         }
         item {
             Section("Permissions") {
-                StatRow("Notification access", if (graph.phone.notificationAccessGranted) "Granted" else "Off", valueColor = if (graph.phone.notificationAccessGranted) Nd.colors.success else Nd.colors.warning, onClick = { graph.phone.openNotificationAccess() })
+                StatRow("Notification access", if (graph.phone.notificationAccessGranted) "Granted" else "Off", valueColor = if (graph.phone.notificationAccessGranted) Nd.colors.success else Nd.colors.warning, onClick = { if (graph.phone.notificationAccessGranted) graph.phone.openNotificationAccess() else nav.navigate("watch/notifications") })
                 StatRow("Runtime permissions", if (missing.isEmpty()) "Granted" else "${missing.size} missing", valueColor = if (missing.isEmpty()) Nd.colors.success else Nd.colors.warning, onClick = { graph.phone.openAppSettings() })
             }
         }
@@ -104,6 +105,15 @@ fun SettingsScreen(nav: NavController) {
                 else Row(Modifier.fillMaxWidth().padding(vertical = Space.md), horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                     NdButton("Cancel", { confirmClear = false }, style = ButtonStyle.GHOST)
                     NdButton("Clear", { graph.health.clear(); confirmClear = false }, style = ButtonStyle.DESTRUCTIVE)
+                }
+                if (!confirmDeleteAll) NavRow("Delete all data", subtitle = "Health history, settings, faces and logs on this phone", icon = R.drawable.ic_trash) { confirmDeleteAll = true }
+                else Card(Modifier.padding(vertical = Space.md)) {
+                    Txt("Everything SilentFit stored on this phone is erased and the app closes. Data on the watch itself is not changed.", Nd.type.bodySm, color = Nd.colors.textSecondary)
+                    Spacer(Modifier.height(Space.md))
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+                        NdButton("Delete", { (context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager).clearApplicationUserData() }, style = ButtonStyle.DESTRUCTIVE)
+                        NdButton("Cancel", { confirmDeleteAll = false }, style = ButtonStyle.GHOST)
+                    }
                 }
             }
         }
@@ -135,6 +145,8 @@ fun SettingsScreen(nav: NavController) {
             Section("Support") {
                 NavRow("Connection log", icon = R.drawable.ic_scan_line) { nav.navigate("settings/log") }
                 NavRow("About & licences", value = BuildConfig.VERSION_NAME, icon = R.drawable.ic_info) { nav.navigate("settings/about") }
+                NavRow("Privacy policy", icon = R.drawable.ic_lock) { graph.phone.openUrl(BuildConfig.PRIVACY_URL) }
+                NavRow("Terms of use", icon = R.drawable.ic_file_code) { graph.phone.openUrl(BuildConfig.TERMS_URL) }
                 NavRow("Source code", subtitle = "github.com/Ebullioscopic/SilentFit", icon = R.drawable.ic_file_code) { graph.phone.openUrl(Links.SOURCE) }
                 NavRow("Developer", subtitle = "Hariharan Mudaliar", icon = R.drawable.ic_user) { graph.phone.openUrl(Links.DEVELOPER) }
             }
@@ -241,6 +253,13 @@ fun AboutScreen(nav: NavController) {
                 "no account and no analytics.",
             Nd.type.body,
         )
+        Section("Health information") {
+            Txt(
+                "SilentFit is not a medical device. Heart rate, SpO₂, stress, sleep and activity readings come from the watch's sensors, " +
+                    "are estimates for general wellness, and must not be used to diagnose, treat or prevent any condition. Ask a doctor about any health concern.",
+                Nd.type.bodySm, color = Nd.colors.textSecondary,
+            )
+        }
         Section("Account ID") {
             Txt("The watch remembers the ID it was paired with. Reusing the NoiseFit ID avoids resetting the watch.", Nd.type.bodySm, color = Nd.colors.textSecondary)
             Spacer(Modifier.height(Space.sm))

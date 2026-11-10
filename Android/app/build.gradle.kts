@@ -15,8 +15,23 @@ android {
         applicationId = "com.hariharan.silentfit"
         minSdk = 29
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.3.2"
+        versionCode = 6
+        versionName = "0.4.0"
+        buildConfigField("String", "PRIVACY_URL", "\"https://ebullioscopic.github.io/SilentFit/privacy.html\"")
+        buildConfigField("String", "TERMS_URL", "\"https://ebullioscopic.github.io/SilentFit/terms.html\"")
+    }
+
+    // github: full APK published on GitHub Releases. play: Google Play build without SEND_SMS (restricted permission).
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("github") {
+            dimension = "distribution"
+            buildConfigField("boolean", "SMS_REPLIES", "true")
+        }
+        create("play") {
+            dimension = "distribution"
+            buildConfigField("boolean", "SMS_REPLIES", "false")
+        }
     }
 
     // Release signing reads app/keystore.properties (gitignored). Without it, release builds fall back to the debug key.
