@@ -93,6 +93,14 @@ object FontAssets {
     const val GROTESK = "fonts/space_grotesk.ttf"
     const val MONO = "fonts/space_mono.ttf"
     const val MONO_BOLD = "fonts/space_mono_bold.ttf"
+    // Nothing OS system typefaces (NType 82, Ndot, Lettera Mono), used for watch faces.
+    const val NTYPE = "fonts/ntype82_regular.otf"
+    const val NTYPE_HEADLINE = "fonts/ntype82_headline.otf"
+    const val NDOT57 = "fonts/ndot57.otf"
+    const val NDOT55 = "fonts/ndot55.otf"
+    const val LETTERA = "fonts/lettera_mono_regular.otf"
+    const val LETTERA_MEDIUM = "fonts/lettera_mono_medium.otf"
+    const val LETTERA_LIGHT = "fonts/lettera_mono_light.otf"
 
     @Volatile private var cache: NdFonts? = null
 
@@ -115,11 +123,19 @@ object FontAssets {
         val path = when (key) {
             "doto" -> DOTO
             "space-grotesk" -> GROTESK
+            "ntype82" -> if (weight >= 600) NTYPE_HEADLINE else NTYPE
+            "ndot" -> NDOT57
+            "ndot-55" -> NDOT55
+            "lettera-mono" -> when {
+                weight >= 500 -> LETTERA_MEDIUM
+                weight < 400 -> LETTERA_LIGHT
+                else -> LETTERA
+            }
             else -> if (weight >= 600) MONO_BOLD else MONO
         }
         return typefaces.getOrPut("$path@$weight") {
-            if (path == MONO || path == MONO_BOLD) Typeface.createFromAsset(context.assets, path)
-            else Typeface.Builder(context.assets, path).setFontVariationSettings("'wght' $weight").build()
+            if (path == DOTO || path == GROTESK) Typeface.Builder(context.assets, path).setFontVariationSettings("'wght' $weight").build()
+            else Typeface.createFromAsset(context.assets, path)
         }
     }
 

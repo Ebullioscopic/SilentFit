@@ -29,6 +29,12 @@ iPadOS) are SwiftUI, built from the Swift package in this repository.
     <td><img src="docs/assets/screenshots/watch.png" width="200" alt="Watch"></td>
     <td><img src="docs/assets/screenshots/permissions.png" width="200" alt="Permissions"></td>
   </tr>
+  <tr>
+    <td><img src="docs/assets/screenshots/faces-nothing.png" width="200" alt="Nothing OS presets"></td>
+    <td><img src="docs/assets/screenshots/editor-widgets.png" width="200" alt="Widgets preset in the editor"></td>
+    <td></td>
+    <td></td>
+  </tr>
 </table>
 
 Screenshots are from demo mode, which uses simulated data.
@@ -84,7 +90,8 @@ wake, reminders and alarms can be changed. Each change is read back from the wat
 confirm it. Settings that cannot be confirmed this way are shown read-only. Alarms can
 also be copied to the phone's clock app.
 
-**Faces.** A face editor with presets, a JSON format for hand-written faces, and import
+**Faces.** A face editor with 43 presets, ten of them monochrome designs set in the Nothing
+OS typefaces (NType 82, Ndot and Lettera Mono), a JSON format for hand-written faces, and import
 of `.sfface` files and compiled faces. A [web version](docs/README.md) of the editor
 runs in the browser and exports files the app can install.
 

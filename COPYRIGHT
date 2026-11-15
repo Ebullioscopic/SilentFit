@@ -22,6 +22,13 @@ AGPL grant above:
 
   Doto, Space Grotesk, Space Mono    SIL Open Font License 1.1
                                      (Android/app/src/main/assets/fonts/OFL-*.txt)
+  NType 82, Ndot 55, Ndot 57         Nothing OS system typefaces, (C) Nothing
+                                     Technology Limited
+  Lettera Mono                       Nothing OS monospace typeface, (C) Lineto
+                                     The Nothing OS typefaces (in assets/fonts and
+                                     docs/assets/fonts) are included for the Nothing
+                                     community hackathon. They are not covered by the
+                                     AGPL; all rights remain with their owners.
   Lucide icons                       ISC License, (C) Lucide Contributors
   AndroidX, CameraX, Kotlin          Apache License 2.0
   ZXing                              Apache License 2.0

@@ -145,7 +145,7 @@ origin top-left.
 | `x`, `y`, `w`, `h` | int | `0` | all (meaning per type, §5) |
 | `bind` | string? | — | `number`, `sprite`, `hand` (§4) |
 | `text` | string? | — | `text` |
-| `font` | enum | `space-mono` | `doto`, `space-mono`, `space-grotesk` |
+| `font` | enum | `space-mono` | `ntype82`, `ndot`, `ndot-55`, `lettera-mono`, `doto`, `space-mono`, `space-grotesk` |
 | `size` | float | `16` | font px; shapes: per shape; hands: centre-cap diameter ×4 |
 | `weight` | int | `400` | 300, 400, 500, 700 (Space Mono: 400/700; Doto: 700) |
 | `color` | colour | `#FFFFFF` | |
@@ -210,7 +210,7 @@ Colours: `#RGB`, `#RRGGBB` or `#AARRGGBB`.
         "glyph": { "enum": ["font", "dot-matrix", "segment"] },
         "rotation": { "enum": [0, 90, 180, 270] },
         "align": { "enum": ["left", "center", "right"] },
-        "font": { "enum": ["doto", "space-mono", "space-grotesk"] },
+        "font": { "enum": ["ntype82", "ndot", "ndot-55", "lettera-mono", "doto", "space-mono", "space-grotesk"] },
         "shape": { "enum": ["rect", "circle", "ring", "arc", "line", "ticks", "dot-ring", "segments", "dot-matrix", "halftone"] },
         "handStyle": { "enum": ["bar", "needle", "line", "dot", "dots", "outline"] },
         "pivotX": { "const": 120 }, "pivotY": { "const": 140 },

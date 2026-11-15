@@ -76,7 +76,7 @@ MUSIC
 See what's playing and control any music app from the watch.
 
 WATCH FACES
-Design your own faces in the built-in editor, start from more than 30 presets, or import faces made in the free browser Studio. Every face is checked before it is installed.
+Design your own faces in the built-in editor, start from more than 40 presets, ten of them set in the Nothing OS typefaces, or import faces made in the free browser Studio. Every face is checked before it is installed.
 
 WATCH SETTINGS
 Change heart-rate, SpO₂ and stress monitoring, reminders, alarms, do-not-disturb and raise to wake. Each change is read back from the watch to confirm it.

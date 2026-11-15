@@ -9,6 +9,13 @@
   const C = window.FaceCore;
   const { binding, glyphFramesOf, isFixedGlyph, glyphSlots } = C;
 
+  // Canvas text never triggers @font-face loading, so request every face up front; document.fonts.ready waits for these.
+  if (document.fonts && document.fonts.load) {
+    ['400 16px "NType 82"', '700 16px "NType 82"', '16px "Ndot 57"', '16px "Ndot 55"', '300 16px "Lettera Mono"',
+      '400 16px "Lettera Mono"', '500 16px "Lettera Mono"', '700 16px "Doto"', '700 16px "Space Grotesk"', '700 16px "Space Mono"']
+      .forEach((f) => document.fonts.load(f).catch(() => {}));
+  }
+
   // ---------------------------------------------------------------- tables
   const SEGMENTS = {
     '0': 0b0111111, '1': 0b0000110, '2': 0b1011011, '3': 0b1001111, '4': 0b1100110,
@@ -42,7 +49,10 @@
   for (const [k, v] of Object.entries(DOT_FONT_SRC)) DOT_FONT[k] = v.split(' ').map((r) => parseInt(r, 2));
 
   const FILLABLE = new Set(['rect', 'circle']);
-  const FONT_FAMILIES = { doto: '"Doto"', 'space-grotesk': '"Space Grotesk"', 'space-mono': '"Space Mono"' };
+  const FONT_FAMILIES = {
+    doto: '"Doto"', 'space-grotesk': '"Space Grotesk"', 'space-mono': '"Space Mono"',
+    ntype82: '"NType 82"', ndot: '"Ndot 57"', 'ndot-55': '"Ndot 55"', 'lettera-mono': '"Lettera Mono"',
+  };
 
   // ---------------------------------------------------------------- colour
   /** Parses #RGB, #RRGGBB, #AARRGGBB → {r,g,b,a(0..255)} like parseColor in FaceSpec.kt. */
@@ -124,7 +134,11 @@
   // ---------------------------------------------------------------- text metrics
   function fontCss(e) {
     const family = FONT_FAMILIES[e.font] || FONT_FAMILIES['space-mono'];
-    const weight = e.font === 'doto' || e.font === 'space-grotesk' ? e.weight : (e.weight >= 600 ? 700 : 400);
+    // Same file choice as FontAssets.typeface in the app.
+    const weight = e.font === 'doto' || e.font === 'space-grotesk' ? e.weight
+      : e.font === 'lettera-mono' ? (e.weight >= 500 ? 500 : e.weight < 400 ? 300 : 400)
+      : e.font === 'ndot' || e.font === 'ndot-55' ? 400
+      : (e.weight >= 600 ? 700 : 400);
     return `${weight} ${e.size}px ${family}, monospace`;
   }
   let scratch = null;

@@ -128,7 +128,9 @@ function renderPresetCards(grid, category) {
   grid.innerHTML = '';
 
   Object.entries(window.PRESETS).forEach(([key, preset]) => {
-    if (category !== 'all' && preset.category !== category) return;
+    if (category === 'nothing') {
+      if (!(preset.elements || []).some((e) => ['ntype82', 'ndot', 'ndot-55', 'lettera-mono'].includes(e.font))) return;
+    } else if (category !== 'all' && preset.category !== category) return;
 
     const card = document.createElement('div');
     card.className = 'preset-card';

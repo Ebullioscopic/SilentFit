@@ -7,7 +7,10 @@ import fit.silent.core.watchface.FaceSpec
 
 data class Preset(val key: String, val title: String, val description: String, val spec: FaceSpec, val experimental: Boolean = false) {
     val isAnalogue get() = spec.elements.any { it.type == "hand" }
+    val isNothingOs get() = spec.elements.any { it.font in NOTHING_FONTS }
 }
+
+private val NOTHING_FONTS = setOf("ntype82", "ndot", "ndot-55", "lettera-mono")
 
 /**
  * Built-in designs for the NF 2's 240×280 LCD. The panel is low resolution, so every preset follows the same
@@ -622,10 +625,203 @@ object Presets {
         ),
     )
 
+    // ------------------------------------------------------------------ Nothing OS, monochrome
+
+    // Nothing OS 5 typefaces: NType 82 for headlines, Ndot for dot-matrix numerals, Lettera Mono for labels and data.
+    private const val NTYPE = "ntype82"
+    private const val NDOT = "ndot"
+    private const val LETTERA = "lettera-mono"
+    private const val MID = "#7A7A7A"
+    private const val TILE = "#1A1A1A"
+    private const val PAPER = "#F2F2F2"
+
+    private fun nLabel(id: String, text: String, x: Int, y: Int, w: Int = 0, color: String = GREY, align: String = "left") =
+        FaceElement(id, "text", x, y, w, text = text, font = LETTERA, size = 13f, weight = 500, color = color, tracking = 0.06f, align = align)
+
+    private fun nValue(id: String, b: Binding, x: Int, y: Int, w: Int, size: Float = 24f, color: String = WHITE, align: String = "left", font: String = NTYPE) =
+        FaceElement(id, "number", x, y, w, bind = b.key, font = font, size = size, weight = 400, color = color, align = align)
+
+    val ndotStack = Preset(
+        "ndot-stack", "Ndot Stack", "The Nothing lock-screen clock: stacked Ndot hours and minutes with the date beneath.",
+        FaceSpec(
+            name = "Ndot Stack",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("hour", "number", 0, 30, W, bind = Binding.HOUR.key, font = NDOT, size = 72f, color = WHITE, align = "center"),
+                FaceElement("minute", "number", 0, 114, W, bind = Binding.MINUTE.key, font = NDOT, size = 72f, color = MID, align = "center"),
+                FaceElement("weekday", "sprite", 30, 222, 82, bind = Binding.WEEKDAY.key, font = NDOT, size = 22f, color = GREY, align = "right"),
+                FaceElement("dot", "shape", CX - 3, 233, 6, 6, shape = "circle", color = WHITE),
+                FaceElement("day", "number", 128, 222, 84, bind = Binding.DAY.key, font = NDOT, size = 22f, color = WHITE),
+            ),
+        ),
+    )
+
+    val headline = Preset(
+        "headline", "Headline", "NType 82 Headline time set flush left, Lettera Mono date and readouts. Calm, editorial.",
+        FaceSpec(
+            name = "Headline",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("weekday", "sprite", 20, 22, bind = Binding.WEEKDAY.key, font = LETTERA, size = 16f, weight = 500, color = GREY),
+                FaceElement("day", "number", 70, 22, bind = Binding.DAY.key, font = LETTERA, size = 16f, weight = 500, color = WHITE),
+                FaceElement("hour", "number", 14, 48, 200, bind = Binding.HOUR.key, font = NTYPE, size = 72f, weight = 700, color = WHITE),
+                FaceElement("minute", "number", 14, 122, 200, bind = Binding.MINUTE.key, font = NTYPE, size = 72f, weight = 700, color = WHITE),
+                FaceElement("rule", "shape", 20, 214, 200, 1, shape = "rect", size = 0f, color = DIM),
+                nLabel("stepsLabel", "STEPS", 20, 224),
+                nValue("steps", Binding.STEPS, 20, 240, 110, size = 22f),
+                nLabel("batLabel", "BATTERY", 130, 224, 90, align = "right"),
+                nValue("battery", Binding.BATTERY, 130, 240, 90, size = 22f, align = "right"),
+            ),
+        ),
+    )
+
+    /** A square dot grid masked to a circle, after the Glyph Matrix on the back of Phone (3). */
+    private fun matrixDisc(color: String) = listOf(
+        FaceElement("matrix", "shape", CX - 112, CY - 112, 224, 224, shape = "dot-matrix", stroke = 3.2f, color = color),
+        FaceElement("mask", "shape", CX - 170, CY - 170, 340, 340, shape = "ring", stroke = 62f, color = "#000000"),
+        FaceElement("window", "shape", CX - 66, CY - 66, 132, 132, shape = "circle", color = "#000000"),
+    )
+
+    val glyphMatrix = Preset(
+        "glyph-matrix", "Glyph Matrix", "A circular dot matrix like Phone (3)'s Glyph Matrix, framing Ndot time.",
+        FaceSpec(
+            name = "Glyph Matrix",
+            background = Background("#000000"),
+            elements = matrixDisc("#4A4A4A") + listOf(
+                FaceElement("hour", "number", CX - 40, CY - 54, 80, bind = Binding.HOUR.key, font = NDOT, size = 44f, color = WHITE, align = "center"),
+                FaceElement("minute", "number", CX - 40, CY + 2, 80, bind = Binding.MINUTE.key, font = NDOT, size = 44f, color = GREY, align = "center"),
+                FaceElement("weekday", "sprite", 0, 256, W, bind = Binding.WEEKDAY.key, font = LETTERA, size = 13f, weight = 500, color = GREY, align = "center"),
+            ),
+        ),
+    )
+
+    val widgets = Preset(
+        "widgets", "Widgets", "Nothing OS widgets on your wrist: a time pill and four tiles for steps, heart rate, battery and date.",
+        FaceSpec(
+            name = "Widgets",
+            background = Background("#000000"),
+            elements = buildList {
+                add(FaceElement("timePill", "shape", 10, 10, 220, 100, shape = "rect", size = 50f, color = TILE))
+                add(FaceElement("hour", "number", 10, 26, 102, bind = Binding.HOUR.key, font = NTYPE, size = 60f, weight = 700, color = WHITE, align = "right"))
+                add(FaceElement("c1", "shape", CX - 3, 46, 6, 6, shape = "circle", color = GREY))
+                add(FaceElement("c2", "shape", CX - 3, 68, 6, 6, shape = "circle", color = GREY))
+                add(FaceElement("minute", "number", 128, 26, 102, bind = Binding.MINUTE.key, font = NTYPE, size = 60f, weight = 700, color = WHITE))
+                val tiles = listOf(10 to 118, 124 to 118, 10 to 198, 124 to 198)
+                tiles.forEachIndexed { i, (x, y) -> add(FaceElement("tile$i", "shape", x, y, 106, 72, shape = "rect", size = 22f, color = TILE)) }
+                add(nLabel("stepsLabel", "STEPS", 22, 130, color = MID))
+                add(nValue("steps", Binding.STEPS, 22, 150, 84, size = 26f))
+                add(nLabel("bpmLabel", "BPM", 136, 130, color = MID))
+                add(nValue("hr", Binding.HEART_RATE, 136, 150, 84, size = 26f))
+                add(nLabel("batLabel", "BATTERY", 22, 210, color = MID))
+                add(nValue("battery", Binding.BATTERY, 22, 230, 84, size = 26f))
+                add(FaceElement("weekday", "sprite", 136, 210, 84, bind = Binding.WEEKDAY.key, font = LETTERA, size = 13f, weight = 500, color = MID))
+                add(nValue("day", Binding.DAY, 136, 230, 84, size = 26f))
+            },
+        ),
+    )
+
+    val pillClock = Preset(
+        "pill-clock", "Pill Clock", "Hours and minutes in two outlined pills, the shape of Nothing's clock widget.",
+        FaceSpec(
+            name = "Pill Clock",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("pillL", "shape", 14, 30, 102, 196, shape = "rect", size = 51f, fill = false, stroke = 3f, color = WHITE),
+                FaceElement("pillR", "shape", 124, 30, 102, 196, shape = "rect", size = 51f, fill = false, stroke = 3f, color = MID),
+                FaceElement("hour", "number", 14, 90, 102, bind = Binding.HOUR.key, font = NTYPE, size = 62f, weight = 700, color = WHITE, align = "center"),
+                FaceElement("minute", "number", 124, 90, 102, bind = Binding.MINUTE.key, font = NTYPE, size = 62f, weight = 700, color = WHITE, align = "center"),
+                FaceElement("weekday", "sprite", 14, 240, 100, bind = Binding.WEEKDAY.key, font = LETTERA, size = 16f, weight = 500, color = GREY, align = "center"),
+                FaceElement("day", "number", 124, 240, 102, bind = Binding.DAY.key, font = LETTERA, size = 16f, weight = 500, color = WHITE, align = "center"),
+            ),
+        ),
+    )
+
+    val ndotDial = Preset(
+        "ndot-dial", "Ndot Dial", "Twelve Ndot numerals, a fine dotted minute ring and plain white hands. No colour.",
+        FaceSpec(
+            name = "Ndot Dial",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("minutes", "shape", 6, CY - 114, 228, 228, shape = "dot-ring", count = 60, stroke = 1.6f, color = "#5A5A5A"),
+            ) + numerals(90, 22f, WHITE, NDOT) +
+                hands("bar", color = WHITE, hourWidth = 10f, minuteWidth = 7f, seconds = false, cap = WHITE),
+        ),
+    )
+
+    val paperMono = Preset(
+        "paper-mono", "Paper Mono", "Light mode: black NType 82 time on paper white, Ndot date and a single hairline.",
+        FaceSpec(
+            name = "Paper Mono",
+            background = Background(PAPER),
+            elements = listOf(
+                FaceElement("weekday", "sprite", 20, 24, bind = Binding.WEEKDAY.key, font = NDOT, size = 22f, color = "#6A6A6A"),
+                FaceElement("day", "number", 84, 24, bind = Binding.DAY.key, font = NDOT, size = 22f, color = INK),
+                FaceElement("hour", "number", 14, 70, 212, bind = Binding.HOUR.key, font = NTYPE, size = 72f, weight = 400, color = INK),
+                FaceElement("minute", "number", 14, 144, 212, bind = Binding.MINUTE.key, font = NTYPE, size = 72f, weight = 400, color = INK),
+                FaceElement("rule", "shape", 20, 238, 200, 2, shape = "rect", size = 0f, color = INK),
+                FaceElement("battery", "number", 120, 246, 100, bind = Binding.BATTERY.key, font = LETTERA, size = 16f, weight = 500, color = INK, align = "right"),
+                nLabel("batLabel", "BATT", 20, 248, color = "#6A6A6A"),
+            ),
+        ),
+    )
+
+    val lettera = Preset(
+        "lettera", "Lettera", "Everything in Lettera Mono: light time, then steps, heart rate and battery as tidy data rows.",
+        FaceSpec(
+            name = "Lettera",
+            background = Background("#000000"),
+            elements = buildList {
+                add(FaceElement("weekday", "sprite", 20, 22, bind = Binding.WEEKDAY.key, font = LETTERA, size = 14f, weight = 500, color = GREY))
+                add(FaceElement("day", "number", 64, 22, bind = Binding.DAY.key, font = LETTERA, size = 14f, weight = 500, color = WHITE))
+                add(FaceElement("hour", "number", 14, 48, bind = Binding.HOUR.key, font = LETTERA, size = 60f, weight = 300, color = WHITE))
+                add(FaceElement("sep", "text", 96, 48, text = ":", font = LETTERA, size = 60f, weight = 300, color = MID))
+                add(FaceElement("minute", "number", 136, 48, bind = Binding.MINUTE.key, font = LETTERA, size = 60f, weight = 300, color = WHITE))
+                listOf("STEPS" to Binding.STEPS, "BPM" to Binding.HEART_RATE, "BATTERY" to Binding.BATTERY).forEachIndexed { i, (text, b) ->
+                    val y = 144 + i * 42
+                    add(FaceElement("r$i", "shape", 20, y, 200, 1, shape = "rect", size = 0f, color = DIM))
+                    add(nLabel("l$i", text, 20, y + 14))
+                    add(nValue("v$i", b, 100, y + 8, 120, size = 21f, align = "right", font = LETTERA))
+                }
+            },
+        ),
+    )
+
+    val extraDark = Preset(
+        "extra-dark", "Extra Dark", "After Nothing OS's Extra Dark mode: dim grey Ndot time and one white dot. Easy on the eyes at night.",
+        FaceSpec(
+            name = "Extra Dark",
+            background = Background("#000000"),
+            elements = listOf(
+                FaceElement("mark", "shape", CX - 4, 76, 8, 8, shape = "circle", color = WHITE),
+                FaceElement("hour", "number", 0, 104, 112, bind = Binding.HOUR.key, font = NDOT, size = 56f, color = "#6A6A6A", align = "right"),
+                FaceElement("minute", "number", 128, 104, bind = Binding.MINUTE.key, font = NDOT, size = 56f, color = "#6A6A6A"),
+                FaceElement("weekday", "sprite", 0, 190, W, bind = Binding.WEEKDAY.key, font = NDOT, size = 18f, color = "#4A4A4A", align = "center"),
+            ),
+        ),
+    )
+
+    val glimpse = Preset(
+        "glimpse", "Glimpse", "A grey halftone rising from the corner and NType 82 time low on the left, like Lock Glimpse.",
+        FaceSpec(
+            name = "Glimpse",
+            background = Background("#000000"),
+            elements = listOf(
+                cloud(70, -80, 260, color = "#3A3A3A", spacing = 11f, dot = 4.5f),
+                FaceElement("weekday", "sprite", 20, 24, bind = Binding.WEEKDAY.key, font = NDOT, size = 20f, color = WHITE),
+                FaceElement("day", "number", 76, 24, bind = Binding.DAY.key, font = NDOT, size = 20f, color = GREY),
+                FaceElement("hour", "number", 14, 128, bind = Binding.HOUR.key, font = NTYPE, size = 66f, weight = 700, color = WHITE),
+                FaceElement("minute", "number", 104, 128, bind = Binding.MINUTE.key, font = NTYPE, size = 66f, weight = 700, color = MID),
+                nLabel("stepsLabel", "STEPS", 20, 226),
+                nValue("steps", Binding.STEPS, 20, 242, 140, size = 21f, font = LETTERA),
+            ),
+        ),
+    )
+
     val all = listOf(
         dotMatrix, instrument, paper, subdials, glyphRings, minimal, twoHands, indexDots, cloud, braun, railway, radar, paperCloud,
-        f1Speedo, orbit, oneHand, split,
+        f1Speedo, orbit, oneHand, split, ndotDial,
         dotMatrixDigital, ledMatrix, segment, stack, glyphData, monoLed, cloudDigital, swissGrid, swissDark, bigDate, terminal,
         f1Telemetry, hud, neonGrid, dotTime, dataHero,
+        ndotStack, headline, glyphMatrix, widgets, pillClock, paperMono, lettera, extraDark, glimpse,
     )
 }

@@ -236,8 +236,13 @@ fun FacesScreen(nav: NavController) {
 private enum class FaceTab(val label: String) { MINE("Mine"), DRAFTS("Drafts"), PRESETS("Presets"), FILES("Files") }
 
 private enum class PresetFilter(val label: String) {
-    ALL("All"), ANALOGUE("Analogue"), DIGITAL("Digital");
-    fun matches(p: fit.silent.app.facestudio.Preset) = this == ALL || (this == ANALOGUE) == p.isAnalogue
+    ALL("All"), NOTHING("Nothing OS"), ANALOGUE("Analogue"), DIGITAL("Digital");
+    fun matches(p: fit.silent.app.facestudio.Preset) = when (this) {
+        ALL -> true
+        NOTHING -> p.isNothingOs
+        ANALOGUE -> p.isAnalogue
+        DIGITAL -> !p.isAnalogue
+    }
 }
 
 private fun Set<String>.toggle(id: String) = if (id in this) this - id else this + id

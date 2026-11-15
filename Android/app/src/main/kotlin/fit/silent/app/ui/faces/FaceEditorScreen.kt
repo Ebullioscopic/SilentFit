@@ -107,7 +107,11 @@ import kotlin.math.roundToInt
 private enum class Panel(val label: String) { LAYERS("Layers"), STYLE("Style"), ADD("Add"), FACE("Face") }
 
 private val PALETTE = listOf("#FFFFFF", "#E8E8E8", "#999999", "#666666", "#333333", "#000000", "#D71921", "#4A9E5C", "#D4A843", "#5B9BF6", "#F5F5F5", "#1A1A1A")
-private val FONTS = listOf("doto" to "Doto", "space-mono" to "Mono", "space-grotesk" to "Grotesk")
+private val FONTS = listOf(
+    "ntype82" to "NType 82", "ndot" to "Ndot 57", "ndot-55" to "Ndot 55", "lettera-mono" to "Lettera Mono",
+    "doto" to "Doto", "space-mono" to "Space Mono", "space-grotesk" to "Space Grotesk",
+)
+private val SINGLE_WEIGHT = setOf("space-mono", "ndot", "ndot-55")
 
 /** Undo/redo history of whole-spec snapshots. */
 private class History {
@@ -515,8 +519,12 @@ private fun Rotation(e: FaceElement, edit: ((FaceElement) -> FaceElement) -> Uni
 private fun FontPicker(e: FaceElement, edit: ((FaceElement) -> FaceElement) -> Unit) {
     Label("Typeface", Modifier.padding(top = Space.md))
     Spacer(Modifier.height(Space.sm))
-    SegmentedControl(FONTS.map { it.first }, e.font, { v -> edit { it.copy(font = v, weight = if (v == "doto") 700 else it.weight) } }, label = { k -> FONTS.first { it.first == k }.second })
-    if (e.font != "space-mono") {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
+        FONTS.forEach { (key, name) ->
+            Chip(name, e.font == key, { edit { it.copy(font = key, weight = if (key == "doto") 700 else it.weight) } })
+        }
+    }
+    if (e.font !in SINGLE_WEIGHT) {
         Spacer(Modifier.height(Space.sm))
         SegmentedControl(listOf(300, 400, 500, 700), e.weight.let { w -> listOf(300, 400, 500, 700).minBy { abs(it - w) } }, { v -> edit { it.copy(weight = v) } }, label = { mapOf(300 to "Light", 400 to "Regular", 500 to "Medium", 700 to "Bold")[it]!! })
     }

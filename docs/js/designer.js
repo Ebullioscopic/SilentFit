@@ -627,8 +627,9 @@
           `<div class="inspector-section"><button class="glyph-option" data-action="clear-ghost" style="width:100%">Hide unlit</button></div>`;
       }
       const f = el.font || 'space-mono';
-      return this.section('FONT', this.seg('font', [['doto', 'Doto'], ['space-mono', 'Mono'], ['space-grotesk', 'Grotesk']], f) +
-        `<div class="inspector-row" style="margin-top:8px">${this.num('Size', 'size', el, { def: 16, min: 6, max: 120 })}${this.num('Wt', 'weight', el, { def: 400, min: 100, max: 900, step: 100, title: 'Space Mono: 600+ is bold' })}</div>
+      return this.section('FONT', this.seg('font', [['ntype82', 'NType'], ['ndot', 'Ndot 57'], ['ndot-55', 'Ndot 55'], ['lettera-mono', 'Lettera']], f) +
+        `<div style="margin-top:6px">${this.seg('font', [['doto', 'Doto'], ['space-mono', 'Mono'], ['space-grotesk', 'Grotesk']], f)}</div>` +
+        `<div class="inspector-row" style="margin-top:8px">${this.num('Size', 'size', el, { def: 16, min: 6, max: 120 })}${this.num('Wt', 'weight', el, { def: 400, min: 100, max: 900, step: 100, title: 'NType 82 and Space Mono: 600+ is the headline/bold cut. Lettera: 300 light, 400 regular, 500 medium' })}</div>
          <div class="inspector-row">${this.num('Track', 'tracking', el, { def: 0, min: -0.2, max: 1, step: 0.01, kind: 'float' })}${el.type === 'text' ? `<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-secondary)"><input type="checkbox" data-prop="uppercase" data-kind="bool"${el.uppercase ? ' checked' : ''}> CAPS</label>` : ''}</div>`);
     }
     alignPanel(el) {

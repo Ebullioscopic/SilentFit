@@ -186,8 +186,22 @@ turn around the screen centre (120, 140) — the only pivot proven on the watch.
 
 ### Fonts
 
-`doto` (dot-matrix), `space-mono`, `space-grotesk` — the Nothing design typefaces,
-bundled under the SIL Open Font License.
+| Key | Typeface | Weights |
+|---|---|---|
+| `ntype82` | NType 82 (Nothing OS headline face) | 400 regular, 600+ headline |
+| `ndot` | Ndot 57 (Nothing OS dot-matrix) | one |
+| `ndot-55` | Ndot 55 (outlined dots) | one |
+| `lettera-mono` | Lettera Mono (Nothing OS monospace) | 300 light, 400 regular, 500 medium |
+| `doto` | Doto (dot-matrix) | 100–900 |
+| `space-mono` | Space Mono | 400, 600+ bold |
+| `space-grotesk` | Space Grotesk | 300–700 |
+
+Doto, Space Mono and Space Grotesk are under the SIL Open Font License. NType 82, Ndot
+and Lettera Mono are the Nothing OS system typefaces, included for the Nothing community
+hackathon; see COPYRIGHT.
+
+Live digits must fit the watch's 87 px frame: NType 82 and Ndot up to size 72, Lettera
+Mono up to 67, Doto up to 70.
 
 ### Limits
 

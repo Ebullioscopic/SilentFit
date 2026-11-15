@@ -1837,6 +1837,185 @@ window.PRESETS = {
   "category": "analogue",
   "description": "Half paper, half black, with red hands crossing both."
  },
+ "ndot-dial": {
+  "format": "silentfit.face",
+  "version": 1,
+  "name": "Ndot Dial",
+  "elements": [
+   {
+    "id": "minutes",
+    "type": "shape",
+    "x": 6,
+    "y": 26,
+    "w": 228,
+    "h": 228,
+    "color": "#5A5A5A",
+    "shape": "dot-ring",
+    "stroke": 1.6,
+    "count": 60
+   },
+   {
+    "id": "n1",
+    "type": "text",
+    "x": 164,
+    "y": 50,
+    "text": "1",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n2",
+    "type": "text",
+    "x": 197,
+    "y": 82,
+    "text": "2",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n3",
+    "type": "text",
+    "x": 210,
+    "y": 127,
+    "text": "3",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n4",
+    "type": "text",
+    "x": 197,
+    "y": 171,
+    "text": "4",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n5",
+    "type": "text",
+    "x": 164,
+    "y": 204,
+    "text": "5",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n6",
+    "type": "text",
+    "x": 120,
+    "y": 217,
+    "text": "6",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n7",
+    "type": "text",
+    "x": 75,
+    "y": 204,
+    "text": "7",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n8",
+    "type": "text",
+    "x": 43,
+    "y": 172,
+    "text": "8",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n9",
+    "type": "text",
+    "x": 30,
+    "y": 127,
+    "text": "9",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n10",
+    "type": "text",
+    "x": 43,
+    "y": 82,
+    "text": "10",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n11",
+    "type": "text",
+    "x": 75,
+    "y": 50,
+    "text": "11",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "n12",
+    "type": "text",
+    "x": 120,
+    "y": 37,
+    "text": "12",
+    "font": "ndot",
+    "size": 22,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "hour",
+    "type": "hand",
+    "bind": "hand.hour",
+    "size": 0,
+    "stroke": 10,
+    "length": 60
+   },
+   {
+    "id": "minute",
+    "type": "hand",
+    "bind": "hand.minute",
+    "size": 0,
+    "stroke": 7,
+    "length": 94,
+    "tail": 14
+   },
+   {
+    "id": "cap",
+    "type": "shape",
+    "x": 113,
+    "y": 133,
+    "w": 14,
+    "h": 14,
+    "shape": "circle"
+   }
+  ],
+  "category": "analogue",
+  "description": "Twelve Ndot numerals, a fine dotted minute ring and plain white hands. No colour."
+ },
  "dot-matrix-digital": {
   "format": "silentfit.face",
   "version": 1,
@@ -3914,6 +4093,912 @@ window.PRESETS = {
   ],
   "category": "digital",
   "description": "Steps as the hero in Doto; the time stays small at the top."
+ },
+ "ndot-stack": {
+  "format": "silentfit.face",
+  "version": 1,
+  "name": "Ndot Stack",
+  "elements": [
+   {
+    "id": "hour",
+    "type": "number",
+    "y": 30,
+    "w": 240,
+    "bind": "time.hour",
+    "font": "ndot",
+    "size": 72,
+    "align": "center"
+   },
+   {
+    "id": "minute",
+    "type": "number",
+    "y": 114,
+    "w": 240,
+    "bind": "time.minute",
+    "font": "ndot",
+    "size": 72,
+    "color": "#7A7A7A",
+    "align": "center"
+   },
+   {
+    "id": "weekday",
+    "type": "sprite",
+    "x": 30,
+    "y": 222,
+    "w": 82,
+    "bind": "date.weekday",
+    "font": "ndot",
+    "size": 22,
+    "color": "#A0A0A0",
+    "align": "right"
+   },
+   {
+    "id": "dot",
+    "type": "shape",
+    "x": 117,
+    "y": 233,
+    "w": 6,
+    "h": 6,
+    "shape": "circle"
+   },
+   {
+    "id": "day",
+    "type": "number",
+    "x": 128,
+    "y": 222,
+    "w": 84,
+    "bind": "date.day",
+    "font": "ndot",
+    "size": 22
+   }
+  ],
+  "category": "digital",
+  "description": "The Nothing lock-screen clock: stacked Ndot hours and minutes with the date beneath."
+ },
+ "headline": {
+  "format": "silentfit.face",
+  "version": 1,
+  "name": "Headline",
+  "elements": [
+   {
+    "id": "weekday",
+    "type": "sprite",
+    "x": 20,
+    "y": 22,
+    "bind": "date.weekday",
+    "font": "lettera-mono",
+    "weight": 500,
+    "color": "#A0A0A0"
+   },
+   {
+    "id": "day",
+    "type": "number",
+    "x": 70,
+    "y": 22,
+    "bind": "date.day",
+    "font": "lettera-mono",
+    "weight": 500
+   },
+   {
+    "id": "hour",
+    "type": "number",
+    "x": 14,
+    "y": 48,
+    "w": 200,
+    "bind": "time.hour",
+    "font": "ntype82",
+    "size": 72,
+    "weight": 700
+   },
+   {
+    "id": "minute",
+    "type": "number",
+    "x": 14,
+    "y": 122,
+    "w": 200,
+    "bind": "time.minute",
+    "font": "ntype82",
+    "size": 72,
+    "weight": 700
+   },
+   {
+    "id": "rule",
+    "type": "shape",
+    "x": 20,
+    "y": 214,
+    "w": 200,
+    "h": 1,
+    "size": 0,
+    "color": "#3A3A3A",
+    "shape": "rect"
+   },
+   {
+    "id": "stepsLabel",
+    "type": "text",
+    "x": 20,
+    "y": 224,
+    "text": "STEPS",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#A0A0A0",
+    "tracking": 0.06
+   },
+   {
+    "id": "steps",
+    "type": "number",
+    "x": 20,
+    "y": 240,
+    "w": 110,
+    "bind": "activity.steps",
+    "font": "ntype82",
+    "size": 22
+   },
+   {
+    "id": "batLabel",
+    "type": "text",
+    "x": 130,
+    "y": 224,
+    "w": 90,
+    "text": "BATTERY",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#A0A0A0",
+    "align": "right",
+    "tracking": 0.06
+   },
+   {
+    "id": "battery",
+    "type": "number",
+    "x": 130,
+    "y": 240,
+    "w": 90,
+    "bind": "device.battery",
+    "font": "ntype82",
+    "size": 22,
+    "align": "right"
+   }
+  ],
+  "category": "digital",
+  "description": "NType 82 Headline time set flush left, Lettera Mono date and readouts. Calm, editorial."
+ },
+ "glyph-matrix": {
+  "format": "silentfit.face",
+  "version": 1,
+  "name": "Glyph Matrix",
+  "elements": [
+   {
+    "id": "matrix",
+    "type": "shape",
+    "x": 8,
+    "y": 28,
+    "w": 224,
+    "h": 224,
+    "color": "#4A4A4A",
+    "shape": "dot-matrix",
+    "stroke": 3.2
+   },
+   {
+    "id": "mask",
+    "type": "shape",
+    "x": -50,
+    "y": -30,
+    "w": 340,
+    "h": 340,
+    "color": "#000000",
+    "shape": "ring",
+    "stroke": 62
+   },
+   {
+    "id": "window",
+    "type": "shape",
+    "x": 54,
+    "y": 74,
+    "w": 132,
+    "h": 132,
+    "color": "#000000",
+    "shape": "circle"
+   },
+   {
+    "id": "hour",
+    "type": "number",
+    "x": 80,
+    "y": 86,
+    "w": 80,
+    "bind": "time.hour",
+    "font": "ndot",
+    "size": 44,
+    "align": "center"
+   },
+   {
+    "id": "minute",
+    "type": "number",
+    "x": 80,
+    "y": 142,
+    "w": 80,
+    "bind": "time.minute",
+    "font": "ndot",
+    "size": 44,
+    "color": "#A0A0A0",
+    "align": "center"
+   },
+   {
+    "id": "weekday",
+    "type": "sprite",
+    "y": 256,
+    "w": 240,
+    "bind": "date.weekday",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#A0A0A0",
+    "align": "center"
+   }
+  ],
+  "category": "digital",
+  "description": "A circular dot matrix like Phone (3)'s Glyph Matrix, framing Ndot time."
+ },
+ "widgets": {
+  "format": "silentfit.face",
+  "version": 1,
+  "name": "Widgets",
+  "elements": [
+   {
+    "id": "timePill",
+    "type": "shape",
+    "x": 10,
+    "y": 10,
+    "w": 220,
+    "h": 100,
+    "size": 50,
+    "color": "#1A1A1A",
+    "shape": "rect"
+   },
+   {
+    "id": "hour",
+    "type": "number",
+    "x": 10,
+    "y": 26,
+    "w": 102,
+    "bind": "time.hour",
+    "font": "ntype82",
+    "size": 60,
+    "weight": 700,
+    "align": "right"
+   },
+   {
+    "id": "c1",
+    "type": "shape",
+    "x": 117,
+    "y": 46,
+    "w": 6,
+    "h": 6,
+    "color": "#A0A0A0",
+    "shape": "circle"
+   },
+   {
+    "id": "c2",
+    "type": "shape",
+    "x": 117,
+    "y": 68,
+    "w": 6,
+    "h": 6,
+    "color": "#A0A0A0",
+    "shape": "circle"
+   },
+   {
+    "id": "minute",
+    "type": "number",
+    "x": 128,
+    "y": 26,
+    "w": 102,
+    "bind": "time.minute",
+    "font": "ntype82",
+    "size": 60,
+    "weight": 700
+   },
+   {
+    "id": "tile0",
+    "type": "shape",
+    "x": 10,
+    "y": 118,
+    "w": 106,
+    "h": 72,
+    "size": 22,
+    "color": "#1A1A1A",
+    "shape": "rect"
+   },
+   {
+    "id": "tile1",
+    "type": "shape",
+    "x": 124,
+    "y": 118,
+    "w": 106,
+    "h": 72,
+    "size": 22,
+    "color": "#1A1A1A",
+    "shape": "rect"
+   },
+   {
+    "id": "tile2",
+    "type": "shape",
+    "x": 10,
+    "y": 198,
+    "w": 106,
+    "h": 72,
+    "size": 22,
+    "color": "#1A1A1A",
+    "shape": "rect"
+   },
+   {
+    "id": "tile3",
+    "type": "shape",
+    "x": 124,
+    "y": 198,
+    "w": 106,
+    "h": 72,
+    "size": 22,
+    "color": "#1A1A1A",
+    "shape": "rect"
+   },
+   {
+    "id": "stepsLabel",
+    "type": "text",
+    "x": 22,
+    "y": 130,
+    "text": "STEPS",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#7A7A7A",
+    "tracking": 0.06
+   },
+   {
+    "id": "steps",
+    "type": "number",
+    "x": 22,
+    "y": 150,
+    "w": 84,
+    "bind": "activity.steps",
+    "font": "ntype82",
+    "size": 26
+   },
+   {
+    "id": "bpmLabel",
+    "type": "text",
+    "x": 136,
+    "y": 130,
+    "text": "BPM",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#7A7A7A",
+    "tracking": 0.06
+   },
+   {
+    "id": "hr",
+    "type": "number",
+    "x": 136,
+    "y": 150,
+    "w": 84,
+    "bind": "health.heartRate",
+    "font": "ntype82",
+    "size": 26
+   },
+   {
+    "id": "batLabel",
+    "type": "text",
+    "x": 22,
+    "y": 210,
+    "text": "BATTERY",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#7A7A7A",
+    "tracking": 0.06
+   },
+   {
+    "id": "battery",
+    "type": "number",
+    "x": 22,
+    "y": 230,
+    "w": 84,
+    "bind": "device.battery",
+    "font": "ntype82",
+    "size": 26
+   },
+   {
+    "id": "weekday",
+    "type": "sprite",
+    "x": 136,
+    "y": 210,
+    "w": 84,
+    "bind": "date.weekday",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#7A7A7A"
+   },
+   {
+    "id": "day",
+    "type": "number",
+    "x": 136,
+    "y": 230,
+    "w": 84,
+    "bind": "date.day",
+    "font": "ntype82",
+    "size": 26
+   }
+  ],
+  "category": "digital",
+  "description": "Nothing OS widgets on your wrist: a time pill and four tiles for steps, heart rate, battery and date."
+ },
+ "pill-clock": {
+  "format": "silentfit.face",
+  "version": 1,
+  "name": "Pill Clock",
+  "elements": [
+   {
+    "id": "pillL",
+    "type": "shape",
+    "x": 14,
+    "y": 30,
+    "w": 102,
+    "h": 196,
+    "size": 51,
+    "shape": "rect",
+    "stroke": 3,
+    "fill": false
+   },
+   {
+    "id": "pillR",
+    "type": "shape",
+    "x": 124,
+    "y": 30,
+    "w": 102,
+    "h": 196,
+    "size": 51,
+    "color": "#7A7A7A",
+    "shape": "rect",
+    "stroke": 3,
+    "fill": false
+   },
+   {
+    "id": "hour",
+    "type": "number",
+    "x": 14,
+    "y": 90,
+    "w": 102,
+    "bind": "time.hour",
+    "font": "ntype82",
+    "size": 62,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "minute",
+    "type": "number",
+    "x": 124,
+    "y": 90,
+    "w": 102,
+    "bind": "time.minute",
+    "font": "ntype82",
+    "size": 62,
+    "weight": 700,
+    "align": "center"
+   },
+   {
+    "id": "weekday",
+    "type": "sprite",
+    "x": 14,
+    "y": 240,
+    "w": 100,
+    "bind": "date.weekday",
+    "font": "lettera-mono",
+    "weight": 500,
+    "color": "#A0A0A0",
+    "align": "center"
+   },
+   {
+    "id": "day",
+    "type": "number",
+    "x": 124,
+    "y": 240,
+    "w": 102,
+    "bind": "date.day",
+    "font": "lettera-mono",
+    "weight": 500,
+    "align": "center"
+   }
+  ],
+  "category": "digital",
+  "description": "Hours and minutes in two outlined pills, the shape of Nothing's clock widget."
+ },
+ "paper-mono": {
+  "format": "silentfit.face",
+  "version": 1,
+  "name": "Paper Mono",
+  "background": {
+   "color": "#F2F2F2"
+  },
+  "elements": [
+   {
+    "id": "weekday",
+    "type": "sprite",
+    "x": 20,
+    "y": 24,
+    "bind": "date.weekday",
+    "font": "ndot",
+    "size": 22,
+    "color": "#6A6A6A"
+   },
+   {
+    "id": "day",
+    "type": "number",
+    "x": 84,
+    "y": 24,
+    "bind": "date.day",
+    "font": "ndot",
+    "size": 22,
+    "color": "#111111"
+   },
+   {
+    "id": "hour",
+    "type": "number",
+    "x": 14,
+    "y": 70,
+    "w": 212,
+    "bind": "time.hour",
+    "font": "ntype82",
+    "size": 72,
+    "color": "#111111"
+   },
+   {
+    "id": "minute",
+    "type": "number",
+    "x": 14,
+    "y": 144,
+    "w": 212,
+    "bind": "time.minute",
+    "font": "ntype82",
+    "size": 72,
+    "color": "#111111"
+   },
+   {
+    "id": "rule",
+    "type": "shape",
+    "x": 20,
+    "y": 238,
+    "w": 200,
+    "h": 2,
+    "size": 0,
+    "color": "#111111",
+    "shape": "rect"
+   },
+   {
+    "id": "battery",
+    "type": "number",
+    "x": 120,
+    "y": 246,
+    "w": 100,
+    "bind": "device.battery",
+    "font": "lettera-mono",
+    "weight": 500,
+    "color": "#111111",
+    "align": "right"
+   },
+   {
+    "id": "batLabel",
+    "type": "text",
+    "x": 20,
+    "y": 248,
+    "text": "BATT",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#6A6A6A",
+    "tracking": 0.06
+   }
+  ],
+  "category": "digital",
+  "description": "Light mode: black NType 82 time on paper white, Ndot date and a single hairline."
+ },
+ "lettera": {
+  "format": "silentfit.face",
+  "version": 1,
+  "name": "Lettera",
+  "elements": [
+   {
+    "id": "weekday",
+    "type": "sprite",
+    "x": 20,
+    "y": 22,
+    "bind": "date.weekday",
+    "font": "lettera-mono",
+    "size": 14,
+    "weight": 500,
+    "color": "#A0A0A0"
+   },
+   {
+    "id": "day",
+    "type": "number",
+    "x": 64,
+    "y": 22,
+    "bind": "date.day",
+    "font": "lettera-mono",
+    "size": 14,
+    "weight": 500
+   },
+   {
+    "id": "hour",
+    "type": "number",
+    "x": 14,
+    "y": 48,
+    "bind": "time.hour",
+    "font": "lettera-mono",
+    "size": 60,
+    "weight": 300
+   },
+   {
+    "id": "sep",
+    "type": "text",
+    "x": 96,
+    "y": 48,
+    "text": ":",
+    "font": "lettera-mono",
+    "size": 60,
+    "weight": 300,
+    "color": "#7A7A7A"
+   },
+   {
+    "id": "minute",
+    "type": "number",
+    "x": 136,
+    "y": 48,
+    "bind": "time.minute",
+    "font": "lettera-mono",
+    "size": 60,
+    "weight": 300
+   },
+   {
+    "id": "r0",
+    "type": "shape",
+    "x": 20,
+    "y": 144,
+    "w": 200,
+    "h": 1,
+    "size": 0,
+    "color": "#3A3A3A",
+    "shape": "rect"
+   },
+   {
+    "id": "l0",
+    "type": "text",
+    "x": 20,
+    "y": 158,
+    "text": "STEPS",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#A0A0A0",
+    "tracking": 0.06
+   },
+   {
+    "id": "v0",
+    "type": "number",
+    "x": 100,
+    "y": 152,
+    "w": 120,
+    "bind": "activity.steps",
+    "font": "lettera-mono",
+    "size": 21,
+    "align": "right"
+   },
+   {
+    "id": "r1",
+    "type": "shape",
+    "x": 20,
+    "y": 186,
+    "w": 200,
+    "h": 1,
+    "size": 0,
+    "color": "#3A3A3A",
+    "shape": "rect"
+   },
+   {
+    "id": "l1",
+    "type": "text",
+    "x": 20,
+    "y": 200,
+    "text": "BPM",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#A0A0A0",
+    "tracking": 0.06
+   },
+   {
+    "id": "v1",
+    "type": "number",
+    "x": 100,
+    "y": 194,
+    "w": 120,
+    "bind": "health.heartRate",
+    "font": "lettera-mono",
+    "size": 21,
+    "align": "right"
+   },
+   {
+    "id": "r2",
+    "type": "shape",
+    "x": 20,
+    "y": 228,
+    "w": 200,
+    "h": 1,
+    "size": 0,
+    "color": "#3A3A3A",
+    "shape": "rect"
+   },
+   {
+    "id": "l2",
+    "type": "text",
+    "x": 20,
+    "y": 242,
+    "text": "BATTERY",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#A0A0A0",
+    "tracking": 0.06
+   },
+   {
+    "id": "v2",
+    "type": "number",
+    "x": 100,
+    "y": 236,
+    "w": 120,
+    "bind": "device.battery",
+    "font": "lettera-mono",
+    "size": 21,
+    "align": "right"
+   }
+  ],
+  "category": "digital",
+  "description": "Everything in Lettera Mono: light time, then steps, heart rate and battery as tidy data rows."
+ },
+ "extra-dark": {
+  "format": "silentfit.face",
+  "version": 1,
+  "name": "Extra Dark",
+  "elements": [
+   {
+    "id": "mark",
+    "type": "shape",
+    "x": 116,
+    "y": 76,
+    "w": 8,
+    "h": 8,
+    "shape": "circle"
+   },
+   {
+    "id": "hour",
+    "type": "number",
+    "y": 104,
+    "w": 112,
+    "bind": "time.hour",
+    "font": "ndot",
+    "size": 56,
+    "color": "#6A6A6A",
+    "align": "right"
+   },
+   {
+    "id": "minute",
+    "type": "number",
+    "x": 128,
+    "y": 104,
+    "bind": "time.minute",
+    "font": "ndot",
+    "size": 56,
+    "color": "#6A6A6A"
+   },
+   {
+    "id": "weekday",
+    "type": "sprite",
+    "y": 190,
+    "w": 240,
+    "bind": "date.weekday",
+    "font": "ndot",
+    "size": 18,
+    "color": "#4A4A4A",
+    "align": "center"
+   }
+  ],
+  "category": "digital",
+  "description": "After Nothing OS's Extra Dark mode: dim grey Ndot time and one white dot. Easy on the eyes at night."
+ },
+ "glimpse": {
+  "format": "silentfit.face",
+  "version": 1,
+  "name": "Glimpse",
+  "elements": [
+   {
+    "id": "cloud",
+    "type": "shape",
+    "x": 70,
+    "y": -80,
+    "w": 260,
+    "h": 260,
+    "size": 11,
+    "color": "#3A3A3A",
+    "shape": "halftone",
+    "stroke": 4.5
+   },
+   {
+    "id": "weekday",
+    "type": "sprite",
+    "x": 20,
+    "y": 24,
+    "bind": "date.weekday",
+    "font": "ndot",
+    "size": 20
+   },
+   {
+    "id": "day",
+    "type": "number",
+    "x": 76,
+    "y": 24,
+    "bind": "date.day",
+    "font": "ndot",
+    "size": 20,
+    "color": "#A0A0A0"
+   },
+   {
+    "id": "hour",
+    "type": "number",
+    "x": 14,
+    "y": 128,
+    "bind": "time.hour",
+    "font": "ntype82",
+    "size": 66,
+    "weight": 700
+   },
+   {
+    "id": "minute",
+    "type": "number",
+    "x": 104,
+    "y": 128,
+    "bind": "time.minute",
+    "font": "ntype82",
+    "size": 66,
+    "weight": 700,
+    "color": "#7A7A7A"
+   },
+   {
+    "id": "stepsLabel",
+    "type": "text",
+    "x": 20,
+    "y": 226,
+    "text": "STEPS",
+    "font": "lettera-mono",
+    "size": 13,
+    "weight": 500,
+    "color": "#A0A0A0",
+    "tracking": 0.06
+   },
+   {
+    "id": "steps",
+    "type": "number",
+    "x": 20,
+    "y": 242,
+    "w": 140,
+    "bind": "activity.steps",
+    "font": "lettera-mono",
+    "size": 21
+   }
+  ],
+  "category": "digital",
+  "description": "A grey halftone rising from the corner and NType 82 time low on the left, like Lock Glimpse."
  }
 };
 

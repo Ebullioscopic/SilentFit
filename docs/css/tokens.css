@@ -7,6 +7,14 @@
 @font-face { font-family: 'Space Grotesk'; src: url('../assets/fonts/space_grotesk.ttf') format('truetype'); font-weight: 300 700; font-display: swap; }
 @font-face { font-family: 'Space Mono'; src: url('../assets/fonts/space_mono.ttf') format('truetype'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'Space Mono'; src: url('../assets/fonts/space_mono_bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+/* Nothing OS typefaces */
+@font-face { font-family: 'NType 82'; src: url('../assets/fonts/ntype82_regular.otf') format('opentype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'NType 82'; src: url('../assets/fonts/ntype82_headline.otf') format('opentype'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Ndot 57'; src: url('../assets/fonts/ndot57.otf') format('opentype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Ndot 55'; src: url('../assets/fonts/ndot55.otf') format('opentype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Lettera Mono'; src: url('../assets/fonts/lettera_mono_light.otf') format('opentype'); font-weight: 300; font-display: swap; }
+@font-face { font-family: 'Lettera Mono'; src: url('../assets/fonts/lettera_mono_regular.otf') format('opentype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Lettera Mono'; src: url('../assets/fonts/lettera_mono_medium.otf') format('opentype'); font-weight: 500; font-display: swap; }
 
 /* --- Dark Mode (default) --- */
 :root {
